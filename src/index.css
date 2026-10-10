@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #0d0f12;
+    color: #f1f5f9;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .font-mono-numbers {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom glow animations */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.25), 0 0 30px rgba(34, 197, 94, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(34, 197, 94, 0.45), 0 0 50px rgba(34, 197, 94, 0.2);
+  }
+}
+
+@keyframes legendary-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(236, 72, 153, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.6), 0 0 60px rgba(236, 72, 153, 0.35);
+  }
+}
+
+.glow-neon {
+  animation: neon-pulse 2.5s infinite ease-in-out;
+}
+
+.glow-legendary {
+  animation: legendary-pulse 2s infinite ease-in-out;
+}
+
+/* Telegram Mini App safe area support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 12px);
+}
+
+/* Custom discreet scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0f12;
+}
+::-webkit-scrollbar-thumb {
+  background: #272d38;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b4453;
+}
+

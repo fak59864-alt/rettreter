@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>SIM Gacha — Симулятор красивых номеров</title>
+    <meta name="description" content="Telegram Mini App симулятор открытия и оценки редких телефонных номеров: система редкостей, коллекция SIM-карт, апгрейды удачи и экономика." />
+    <meta property="og:title" content="SIM Gacha — Симулятор красивых номеров" />
+    <meta property="og:description" content="Telegram Mini App симулятор открытия и оценки редких телефонных номеров: система редкостей, коллекция SIM-карт, апгрейды удачи и экономика." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0d0f12" />
+    <!-- Suppress Vite HMR WebSocket connection errors per environment guidelines -->
+    <script>
+      window.addEventListener('error', function(event) {
+        if (
+          event.message &&
+          (event.message.includes('WebSocket') ||
+           event.message.includes('createWebSocketModuleRunnerTransport') ||
+           event.message.includes('@vite/client'))
+        ) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function(event) {
+        var str = String(event.reason || '');
+        if (
+          str.includes('WebSocket') ||
+          str.includes('createWebSocketModuleRunnerTransport') ||
+          str.includes('@vite/client')
+        ) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+    </script>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#0d0f12] text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-300 min-h-screen overflow-x-hidden">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

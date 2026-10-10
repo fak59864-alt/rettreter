@@ -1,0 +1,6 @@
+{
+  "name": "SIM Gacha — Симулятор красивых номеров",
+  "description": "Telegram Mini App симулятор открытия и оценки редких телефонных номеров: система редкостей, коллекция SIM-карт, апгрейды удачи и экономика.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
