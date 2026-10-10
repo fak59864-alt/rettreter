@@ -113,28 +113,3 @@ export interface DirectTradeOffer {
   createdAt: number;
   expiresAt: number;
 }
-
-export interface LeaderboardUser {
-  rank: number;
-  userId: number | string;
-  name: string;
-  username?: string;
-  photoUrl?: string;
-  balance: number;
-  level: number;
-  cardsCount: number;
-  bestCardNumber?: string;
-  bestCardRarity?: RarityTier;
-  bestCardTitle?: string;
-  isCurrentUser?: boolean;
-  isTelegram?: boolean;
-  updatedAt?: number;
-}
-
-export interface LeaderboardResponse {
-  success: boolean;
-  total: number;
-  leaderboard: LeaderboardUser[];
-  currentUserRank?: number | null;
-  updatedAt?: number;
-}

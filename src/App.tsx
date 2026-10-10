@@ -18,7 +18,6 @@ import { TradeTab } from './components/TradeTab';
 import { OfflineRewardModal } from './components/OfflineRewardModal';
 import { BotAutoSetupModal } from './components/BotAutoSetupModal';
 import { StatsModal } from './components/StatsModal';
-import { LeaderboardModal } from './components/LeaderboardModal';
 import {
   Sparkles,
   MousePointerClick,
@@ -99,7 +98,6 @@ export default function App() {
   // Modals
   const [showDocsModal, setShowDocsModal] = useState<boolean>(false);
   const [showStatsModal, setShowStatsModal] = useState<boolean>(false);
-  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
 
   // Calculate coins per second from collection and rent upgrades
   const coinsPerSec = calculateCoinsPerSec(collection, upgrades);
@@ -112,15 +110,12 @@ export default function App() {
 
     // Check query params if opened with deep-link
     const urlParams = new URLSearchParams(window.location.search);
-    const rawTabParam = urlParams.get('tab');
-    if (rawTabParam && ['spin', 'clicker', 'casino', 'collection', 'trade', 'shop'].includes(rawTabParam)) {
-      setActiveTab(rawTabParam as ActiveTab);
+    const tabParam = urlParams.get('tab') as ActiveTab;
+    if (tabParam && ['spin', 'clicker', 'casino', 'collection', 'trade', 'shop'].includes(tabParam)) {
+      setActiveTab(tabParam);
     }
     if (urlParams.get('trade') || urlParams.get('gift')) {
       setActiveTab('trade');
-    }
-    if (urlParams.get('modal') === 'top' || rawTabParam === 'leaderboard' || rawTabParam === 'top') {
-      setShowLeaderboard(true);
     }
 
     try {
@@ -159,26 +154,9 @@ export default function App() {
     }
   }, []);
 
-  // Dynamic values
-  const maxInventory = 20 + upgrades.inventoryCapLevel * 10;
-  const playerXP =
-    stats.totalSpins * 15 +
-    collection.length * 10 +
-    Math.floor((stats.totalAfkEarned || 0) / 200) +
-    Math.floor((stats.totalClickerEarned || 0) / 300) +
-    (stats.totalCasinoEarned ? Math.floor(stats.totalCasinoEarned / 500) : 0);
-  const playerLevel = Math.max(1, Math.floor(playerXP / 100) + 1);
-  const xpProgress = playerXP % 100;
-
-  // Sync to server for Telegram user and Live Leaderboard
-  const syncWithServer = (
-    currentBalance: number,
-    currentCollection: PhoneNumberCard[],
-    currentUpgrades: PlayerUpgrades,
-    customStats?: PlayerStats
-  ) => {
+  // Sync to server for Telegram user
+  const syncWithServer = (currentBalance: number, currentCollection: PhoneNumberCard[], currentUpgrades: PlayerUpgrades) => {
     if (!userData.id) return;
-    const st = customStats || stats;
     try {
       fetch('/api/user/sync', {
         method: 'POST',
@@ -186,15 +164,10 @@ export default function App() {
         body: JSON.stringify({
           userId: userData.id,
           username: userData.username,
-          firstName: userData.first_name,
-          photoUrl: userData.photo_url,
           balance: currentBalance,
-          level: playerLevel,
           collection: currentCollection,
           upgrades: currentUpgrades,
-          highestCard: st.highestCard,
-          totalSpins: st.totalSpins,
-          isTelegram: Boolean(userData.isLinkedToTelegram),
+          totalSpins: stats.totalSpins,
         }),
       }).catch(() => {});
     } catch {
@@ -227,14 +200,6 @@ export default function App() {
     return () => clearInterval(saveActiveTimer);
   }, [userData.id]);
 
-  // Periodic Leaderboard sync (every 8 seconds) so balance updates live in the top
-  useEffect(() => {
-    const syncTimer = setInterval(() => {
-      syncWithServer(balance, collection, upgrades, stats);
-    }, 8000);
-    return () => clearInterval(syncTimer);
-  }, [balance, collection, upgrades, stats, userData.id]);
-
   // Save changes to Telegram user scoped localStorage
   useEffect(() => {
     localStorage.setItem(`sim_gacha_${userData.id}_balance`, String(balance));
@@ -242,7 +207,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem(`sim_gacha_${userData.id}_collection`, JSON.stringify(collection));
-    syncWithServer(balance, collection, upgrades, stats);
+    syncWithServer(balance, collection, upgrades);
   }, [collection, userData.id]);
 
   useEffect(() => {
@@ -252,6 +217,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(`sim_gacha_${userData.id}_stats`, JSON.stringify(stats));
   }, [stats, userData.id]);
+
+  // Dynamic values
+  const maxInventory = 20 + upgrades.inventoryCapLevel * 10;
+  const playerXP =
+    stats.totalSpins * 15 +
+    collection.length * 10 +
+    Math.floor((stats.totalAfkEarned || 0) / 200) +
+    Math.floor((stats.totalClickerEarned || 0) / 300) +
+    (stats.totalCasinoEarned ? Math.floor(stats.totalCasinoEarned / 500) : 0);
+  const playerLevel = Math.max(1, Math.floor(playerXP / 100) + 1);
+  const xpProgress = playerXP % 100;
 
   // Handlers
   const handleSpinSuccess = (cards: PhoneNumberCard[], cost: number) => {
@@ -406,7 +382,6 @@ export default function App() {
         onToggleMute={handleToggleMute}
         onOpenStats={() => setShowStatsModal(true)}
         onOpenShop={() => setActiveTab('shop')}
-        onOpenLeaderboard={() => setShowLeaderboard(true)}
       />
 
       {/* Main Content Viewport */}
@@ -609,21 +584,6 @@ export default function App() {
           balance={balance}
           onClose={() => setShowStatsModal(false)}
           onOpenAdminSetup={() => setShowDocsModal(true)}
-          onOpenLeaderboard={() => setShowLeaderboard(true)}
-        />
-      )}
-
-      {/* Leaderboard Modal (Топ реальных пользователей по балансу) */}
-      {showLeaderboard && (
-        <LeaderboardModal
-          currentUser={userData}
-          currentBalance={balance}
-          currentLevel={playerLevel}
-          onClose={() => setShowLeaderboard(false)}
-          onNavigateToSpin={() => {
-            setShowLeaderboard(false);
-            setActiveTab('spin');
-          }}
         />
       )}
 
