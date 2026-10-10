@@ -28,108 +28,204 @@ async function startServer() {
   const syncStore: Record<string, unknown> = {};
 
   const DEFAULT_BOT_TOKEN = process.env.BOT_TOKEN || '8748940272:AAFze_ClMme6PfumQeOad0rIfac-HxNjKWM';
-  const DEFAULT_APP_URL = process.env.APP_URL || 'https://rettreterreeer.vercel.app/';
+  const DEFAULT_APP_URL = 'https://rettreterreeer.vercel.app/';
+
+  // Global protection against unexpected unhandled socket/network crashes
+  process.on('unhandledRejection', (reason) => {
+    console.error('[Process] Unhandled Rejection intercepted:', reason);
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('[Process] Uncaught Exception intercepted:', err);
+  });
 
   // ============================================================================
-  // Telegram Bot Long Polling Handler
+  // Telegram Bot Continuous Service (Permanent Polling & Auto-Config)
+  // Ensures the bot is ALWAYS connected to the WebApp URL and never stops
   // ============================================================================
+  async function configureTelegramBot(token: string, webAppUrl: string) {
+    const tgApi = `https://api.telegram.org/bot${token}`;
+    try {
+      // 1. Delete any webhook to ensure getUpdates never encounters 409 Conflict
+      await fetch(`${tgApi}/deleteWebhook?drop_pending_updates=false`)
+        .then(r => r.json())
+        .catch(() => null);
+
+      // 2. Set native Telegram WebApp Chat Menu Button (bottom-left corner)
+      await fetch(`${tgApi}/setChatMenuButton`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          menu_button: {
+            type: 'web_app',
+            text: '📱 Играть',
+            web_app: { url: webAppUrl },
+          },
+        }),
+      }).then(r => r.json()).catch(() => null);
+
+      // 3. Set bot commands menu
+      await fetch(`${tgApi}/setMyCommands`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commands: [
+            { command: 'start', description: '🎮 Запустить игру Номера Телефонов' },
+            { command: 'play', description: '📱 Играть в Mini App' },
+            { command: 'collection', description: '💎 Моя коллекция SIM-карт' },
+            { command: 'shop', description: '⚡ Улучшения и прокачка' },
+            { command: 'help', description: 'ℹ️ Правила и руководство' },
+          ],
+        }),
+      }).then(r => r.json()).catch(() => null);
+
+      // 4. Set bot descriptions
+      await fetch(`${tgApi}/setMyDescription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: '🎰 Официальный бот игры «Номера Телефонов (Престиж-Телеком)»! Крутите рулетку, выбивайте легендарные и мифические номера, получайте пассивный доход и торгуйте на P2P бирже!',
+        }),
+      }).then(r => r.json()).catch(() => null);
+
+      await fetch(`${tgApi}/setMyShortDescription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          short_description: '🎮 Симулятор номеров: рулетка, мифические 9x номера, пассивная аренда и P2P рынок!',
+        }),
+      }).then(r => r.json()).catch(() => null);
+
+      console.log(`[Telegram Bot] Successfully configured Menu Button & Commands for ${webAppUrl}`);
+    } catch (e) {
+      console.error('[Telegram Bot] Error during bot auto-config:', e);
+    }
+  }
+
+  async function handleTelegramMessage(token: string, webAppUrl: string, msg: any) {
+    if (!msg || !msg.chat || !msg.chat.id) return;
+    const chatId = msg.chat.id;
+    const text = (msg.text || '').trim();
+    const userName = msg.from?.first_name || 'Игрок';
+    const tgApi = `https://api.telegram.org/bot${token}`;
+
+    if (text.startsWith('/help')) {
+      await fetch(`${tgApi}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text:
+            `ℹ️ <b>Как играть в Номера Телефонов (Престиж-Телеком):</b>\n\n` +
+            `🎰 <b>1. Крути рулетку:</b> крути по 1 или сразу 10 номеров, выбивай красивые и редкие комбинации!\n` +
+            `🌟 <b>2. Мифическая редкость:</b> номера с 9 или 10 одинаковыми цифрами (множитель до x500 и 750 ₽/сек дохода)!\n` +
+            `💰 <b>3. Аренда:</b> сохраненные номера приносят доход каждую секунду даже когда ты не в игре.\n` +
+            `🤝 <b>4. P2P Биржа:</b> продавай свои номера за реальную цену и снимай лоты в любой момент.\n` +
+            `🔄 <b>5. Автокрутка:</b> настраивай авто-продажу и авто-сохранение по редкостям.`,
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '🎮 Открыть игру',
+                  web_app: { url: webAppUrl },
+                },
+              ],
+            ],
+          },
+        }),
+      }).catch(() => null);
+    } else {
+      // Default welcome response for /start, /play, /game or any user message
+      await fetch(`${tgApi}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text:
+            `👋 Привет, <b>${userName}</b>!\n\n` +
+            `🎰 <b>Добро пожаловать в Номера Телефонов (Престиж-Телеком)!</b>\n\n` +
+            `📱 Крутите барабан, выбивайте красивые и <b>мифические</b> номера (где 9-10 одинаковых цифр, палиндромы, зеркала, три топора 777), сдавайте их в аренду за пассивный доход и торгуйте на P2P бирже!\n\n` +
+            `👇 <i>Нажмите кнопку ниже, чтобы запустить игру:</i>`,
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '🎮 Играть в Номера Телефонов',
+                  web_app: { url: webAppUrl },
+                },
+              ],
+              [
+                {
+                  text: '💎 Моя коллекция',
+                  web_app: { url: `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}tab=collection` },
+                },
+                {
+                  text: '⚡ Улучшения',
+                  web_app: { url: `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}tab=shop` },
+                },
+              ],
+            ],
+          },
+        }),
+      }).catch(() => null);
+    }
+  }
+
   function startBotPolling(token: string, webAppUrl: string) {
     let offset = 0;
-    let isPolling = true;
-    console.log(`[Telegram Bot] Service started for bot token: ${token.slice(0, 10)}... (URL: ${webAppUrl})`);
+    console.log(`[Telegram Bot] Starting permanent background polling loop... (URL: ${webAppUrl})`);
+
+    // Initial setup
+    configureTelegramBot(token, webAppUrl);
+
+    // Refresh menu button every 15 minutes to prevent Telegram from dropping it
+    setInterval(() => {
+      configureTelegramBot(token, webAppUrl);
+    }, 15 * 60 * 1000);
 
     const poll = async () => {
-      if (!isPolling) return;
       try {
-        const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${offset}&timeout=25&limit=25`);
+        const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${offset}&timeout=20&limit=50`);
         if (res.ok) {
           const data: any = await res.json();
           if (data.ok && Array.isArray(data.result)) {
             for (const update of data.result) {
               offset = update.update_id + 1;
-              const msg = update.message;
-              if (msg && msg.chat && msg.chat.id) {
-                const chatId = msg.chat.id;
-                const text = (msg.text || '').trim();
-                const userName = msg.from?.first_name || 'Игрок';
-
-                if (text.startsWith('/help')) {
-                  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chat_id: chatId,
-                      text:
-                        `ℹ️ <b>Как играть в Номера Телефонов (Престиж-Телеком):</b>\n\n` +
-                        `🎰 <b>1. Крути рулетку:</b> крути по 1 или сразу 10 номеров, выбивай красивые и редкие комбинации!\n` +
-                        `🌟 <b>2. Мифическая редкость:</b> номера с 9 или 10 одинаковыми цифрами (множитель x250 и 15 000 ₽/сек дохода)!\n` +
-                        `💰 <b>3. Аренда:</b> сохраненные номера приносят доход каждую секунду даже когда ты не в игре.\n` +
-                        `🤝 <b>4. P2P Биржа:</b> продавай свои номера за реальную цену и снимай лоты в любой момент.\n` +
-                        `🔄 <b>5. Автокрутка:</b> настраивай авто-продажу и авто-сохранение по редкостям.`,
-                      parse_mode: 'HTML',
-                      reply_markup: {
-                        inline_keyboard: [
-                          [
-                            {
-                              text: '🎮 Открыть игру',
-                              web_app: { url: webAppUrl },
-                            },
-                          ],
-                        ],
-                      },
-                    }),
-                  });
-                } else if (text.startsWith('/') || text.length > 0) {
-                  // Default welcome for /start, /play, /game or any message
-                  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chat_id: chatId,
-                      text:
-                        `👋 Привет, <b>${userName}</b>!\n\n` +
-                        `🎰 <b>Добро пожаловать в Номера Телефонов (Престиж-Телеком)!</b>\n\n` +
-                        `📱 Крутите барабан, выбивайте красивые и <b>мифические</b> номера (где 9-10 одинаковых цифр, палиндромы, зеркала, три топора 777), сдавайте их в аренду за пассивный доход и торгуйте на P2P бирже!\n\n` +
-                        `👇 <i>Нажмите кнопку ниже, чтобы запустить игру:</i>`,
-                      parse_mode: 'HTML',
-                      reply_markup: {
-                        inline_keyboard: [
-                          [
-                            {
-                              text: '🎮 Играть в Номера Телефонов',
-                              web_app: { url: webAppUrl },
-                            },
-                          ],
-                          [
-                            {
-                              text: '💎 Моя коллекция',
-                              web_app: { url: `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}tab=collection` },
-                            },
-                            {
-                              text: '⚡ Улучшения',
-                              web_app: { url: `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}tab=shop` },
-                            },
-                          ],
-                        ],
-                      },
-                    }),
-                  });
-                }
+              if (update.message) {
+                await handleTelegramMessage(token, webAppUrl, update.message);
               }
             }
           }
+        } else if (res.status === 409) {
+          // Conflict: webhook was active, delete it and retry
+          console.warn('[Telegram Bot] 409 Conflict in getUpdates. Clearing webhook...');
+          await fetch(`https://api.telegram.org/bot${token}/deleteWebhook?drop_pending_updates=false`).catch(() => null);
         }
       } catch (err) {
-        // network or timeout, continue safely
+        // Network blip or timeout; will retry automatically
       }
-      setTimeout(poll, 1200);
+      setTimeout(poll, 1000);
     };
 
     poll();
   }
 
-  // Start background polling for the connected bot
+  // Start permanent background polling for the connected bot
   startBotPolling(DEFAULT_BOT_TOKEN, DEFAULT_APP_URL);
+
+  // Optional Webhook endpoint in case Telegram webhook is ever called directly
+  app.post('/api/telegram/webhook', async (req: Request, res: Response): Promise<void> => {
+    try {
+      const update = req.body;
+      if (update && update.message) {
+        await handleTelegramMessage(DEFAULT_BOT_TOKEN, DEFAULT_APP_URL, update.message);
+      }
+      res.json({ ok: true });
+    } catch {
+      res.json({ ok: true });
+    }
+  });
 
   // ============================================================================
   // API: Telegram Bot Auto-Setup Wizard
@@ -297,7 +393,7 @@ async function startServer() {
     try {
       const { botToken, chatId, appUrl } = req.body;
       const token = botToken || process.env.BOT_TOKEN;
-      const rawTargetUrl = appUrl || process.env.APP_URL || 'https://afknomera.vercel.app';
+      const rawTargetUrl = appUrl || DEFAULT_APP_URL;
       const targetUrl = rawTargetUrl.replace('ais-dev-', 'ais-pre-');
 
       if (!token || !chatId) {

@@ -67,7 +67,7 @@ export const CollectionTab: React.FC<CollectionTabProps> = ({
 
   const collectionIncome = useMemo(() => {
     return collection.reduce((acc, c) => {
-      const base = BASE_NUMBER_INCOME[c.rarity] || 2;
+      const base = BASE_NUMBER_INCOME[c.rarity] || 3;
       return acc + (c.isFavorite ? base * 1.25 : base);
     }, 0);
   }, [collection]);

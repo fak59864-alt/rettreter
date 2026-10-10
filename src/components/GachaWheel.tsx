@@ -521,7 +521,7 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
                   <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
                     {droppedCards.map(c => {
                       const cfg = RARITY_CONFIGS[c.rarity];
-                      const income = BASE_NUMBER_INCOME[c.rarity] || 2;
+                      const income = BASE_NUMBER_INCOME[c.rarity] || 3;
 
                       return (
                         <div

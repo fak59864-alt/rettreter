@@ -127,7 +127,7 @@ export const SimCardView: React.FC<SimCardViewProps> = ({
           {/* Steady income per second */}
           <span className="text-[11px] font-bold text-emerald-300 font-mono-numbers bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1">
             <Zap className="w-2.5 h-2.5 text-emerald-400 fill-emerald-400" />
-            <span>+{BASE_NUMBER_INCOME[card.rarity] || 2} ₽/с</span>
+            <span>+{BASE_NUMBER_INCOME[card.rarity] || 3} ₽/с</span>
           </span>
 
           <span className="text-xs font-mono font-bold text-slate-300">
