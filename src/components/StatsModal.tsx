@@ -9,7 +9,6 @@ interface StatsModalProps {
   balance: number;
   onClose: () => void;
   onOpenAdminSetup?: () => void;
-  onOpenLeaderboard?: () => void;
 }
 
 export const StatsModal: React.FC<StatsModalProps> = ({
@@ -17,7 +16,6 @@ export const StatsModal: React.FC<StatsModalProps> = ({
   balance,
   onClose,
   onOpenAdminSetup,
-  onOpenLeaderboard,
 }) => {
   const netProfit = stats.totalEarned - stats.totalSpent;
   const isProfit = netProfit >= 0;
@@ -75,7 +73,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
         <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-sm font-bold text-slate-100">Игровая статистика и Зал славы</h2>
+            <h2 className="text-sm font-bold text-slate-100">Игровая статистика и профиль</h2>
           </div>
           <button
             onClick={onClose}
@@ -87,35 +85,6 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
         {/* Content */}
         <div className="p-5 overflow-y-auto space-y-4 text-xs">
-          {/* Leaderboard CTA Button */}
-          {onOpenLeaderboard && (
-            <button
-              onClick={() => {
-                onClose();
-                onOpenLeaderboard();
-              }}
-              className="w-full bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/10 border border-amber-500/50 hover:border-amber-400 p-3 rounded-2xl flex items-center justify-between text-left transition-all active:scale-[0.98] group shadow-lg shadow-amber-500/5"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center shadow-md">
-                  <Trophy className="w-5 h-5 text-slate-950 fill-slate-950" />
-                </div>
-                <div>
-                  <div className="font-black text-amber-300 text-xs sm:text-sm flex items-center gap-1.5">
-                    <span>Топ реальных пользователей</span>
-                    <span className="text-[9px] bg-amber-500/30 text-amber-200 px-1 rounded font-bold">LIVE</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    Рейтинг богатейших абонентов по балансу
-                  </div>
-                </div>
-              </div>
-              <span className="text-amber-400 font-bold text-xs group-hover:translate-x-0.5 transition-transform">
-                Открыть →
-              </span>
-            </button>
-          )}
-
           {/* Main Key Figures */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-[#141720] border border-slate-800 p-3 rounded-2xl">
