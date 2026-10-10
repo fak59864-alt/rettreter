@@ -27,6 +27,110 @@ async function startServer() {
   // In-memory player sync storage
   const syncStore: Record<string, unknown> = {};
 
+  const DEFAULT_BOT_TOKEN = process.env.BOT_TOKEN || '8748940272:AAFze_ClMme6PfumQeOad0rIfac-HxNjKWM';
+  const DEFAULT_APP_URL = process.env.APP_URL || 'https://rettreterreeer.vercel.app/';
+
+  // ============================================================================
+  // Telegram Bot Long Polling Handler
+  // ============================================================================
+  function startBotPolling(token: string, webAppUrl: string) {
+    let offset = 0;
+    let isPolling = true;
+    console.log(`[Telegram Bot] Service started for bot token: ${token.slice(0, 10)}... (URL: ${webAppUrl})`);
+
+    const poll = async () => {
+      if (!isPolling) return;
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${offset}&timeout=25&limit=25`);
+        if (res.ok) {
+          const data: any = await res.json();
+          if (data.ok && Array.isArray(data.result)) {
+            for (const update of data.result) {
+              offset = update.update_id + 1;
+              const msg = update.message;
+              if (msg && msg.chat && msg.chat.id) {
+                const chatId = msg.chat.id;
+                const text = (msg.text || '').trim();
+                const userName = msg.from?.first_name || 'Игрок';
+
+                if (text.startsWith('/help')) {
+                  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: chatId,
+                      text:
+                        `ℹ️ <b>Как играть в Номера Телефонов (Престиж-Телеком):</b>\n\n` +
+                        `🎰 <b>1. Крути рулетку:</b> крути по 1 или сразу 10 номеров, выбивай красивые и редкие комбинации!\n` +
+                        `🌟 <b>2. Мифическая редкость:</b> номера с 9 или 10 одинаковыми цифрами (множитель x250 и 15 000 ₽/сек дохода)!\n` +
+                        `💰 <b>3. Аренда:</b> сохраненные номера приносят доход каждую секунду даже когда ты не в игре.\n` +
+                        `🤝 <b>4. P2P Биржа:</b> продавай свои номера за реальную цену и снимай лоты в любой момент.\n` +
+                        `🔄 <b>5. Автокрутка:</b> настраивай авто-продажу и авто-сохранение по редкостям.`,
+                      parse_mode: 'HTML',
+                      reply_markup: {
+                        inline_keyboard: [
+                          [
+                            {
+                              text: '🎮 Открыть игру',
+                              web_app: { url: webAppUrl },
+                            },
+                          ],
+                        ],
+                      },
+                    }),
+                  });
+                } else if (text.startsWith('/') || text.length > 0) {
+                  // Default welcome for /start, /play, /game or any message
+                  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: chatId,
+                      text:
+                        `👋 Привет, <b>${userName}</b>!\n\n` +
+                        `🎰 <b>Добро пожаловать в Номера Телефонов (Престиж-Телеком)!</b>\n\n` +
+                        `📱 Крутите барабан, выбивайте красивые и <b>мифические</b> номера (где 9-10 одинаковых цифр, палиндромы, зеркала, три топора 777), сдавайте их в аренду за пассивный доход и торгуйте на P2P бирже!\n\n` +
+                        `👇 <i>Нажмите кнопку ниже, чтобы запустить игру:</i>`,
+                      parse_mode: 'HTML',
+                      reply_markup: {
+                        inline_keyboard: [
+                          [
+                            {
+                              text: '🎮 Играть в Номера Телефонов',
+                              web_app: { url: webAppUrl },
+                            },
+                          ],
+                          [
+                            {
+                              text: '💎 Моя коллекция',
+                              web_app: { url: `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}tab=collection` },
+                            },
+                            {
+                              text: '⚡ Улучшения',
+                              web_app: { url: `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}tab=shop` },
+                            },
+                          ],
+                        ],
+                      },
+                    }),
+                  });
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // network or timeout, continue safely
+      }
+      setTimeout(poll, 1200);
+    };
+
+    poll();
+  }
+
+  // Start background polling for the connected bot
+  startBotPolling(DEFAULT_BOT_TOKEN, DEFAULT_APP_URL);
+
   // ============================================================================
   // API: Telegram Bot Auto-Setup Wizard
   // Automatically configures Menu Button, Commands, Description via Telegram API
@@ -34,8 +138,8 @@ async function startServer() {
   app.post('/api/telegram/auto-setup', async (req: Request, res: Response): Promise<void> => {
     try {
       const { botToken: providedToken, appUrl: providedUrl } = req.body;
-      const token = providedToken || process.env.BOT_TOKEN;
-      const rawUrl = providedUrl || process.env.APP_URL || 'https://afknomera.vercel.app';
+      const token = providedToken || DEFAULT_BOT_TOKEN;
+      const rawUrl = providedUrl || DEFAULT_APP_URL;
       const appUrl = rawUrl.replace('ais-dev-', 'ais-pre-');
 
       if (!token || typeof token !== 'string' || !token.includes(':')) {

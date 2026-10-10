@@ -53,8 +53,8 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
     if (autoClicksPerSec <= 0) return;
 
     const interval = setInterval(() => {
-      const basePower = 1 + (upgrades.clickPowerLevel || 0) * 3;
-      const turboMult = isTurbo ? 3 : 1;
+      const basePower = 1 + (upgrades.clickPowerLevel || 0) * 1;
+      const turboMult = isTurbo ? 2 : 1;
       const earned = Math.round(basePower * autoClicksPerSec * turboMult);
 
       onUpdateBalance(earned);
@@ -82,10 +82,10 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
     }
   }, [turboCooldown]);
 
-  // Calculate tap power
-  const basePower = 1 + (upgrades.clickPowerLevel || 0) * 3;
-  const critChance = Math.min(40, (upgrades.clickCritChanceLevel || 0) * 1.0);
-  const critMultiplier = 2 + (upgrades.clickCritMultLevel || 0) * 0.35;
+  // Calculate tap power (rebalanced for challenging progression)
+  const basePower = 1 + (upgrades.clickPowerLevel || 0) * 1;
+  const critChance = Math.min(25, (upgrades.clickCritChanceLevel || 0) * 0.6);
+  const critMultiplier = 1.6 + (upgrades.clickCritMultLevel || 0) * 0.15;
 
   const handleChipClick = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     setIsPressed(true);
@@ -93,7 +93,7 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
 
     // Roll critical hit
     const isCrit = Math.random() * 100 < critChance;
-    const turboMult = isTurbo ? 3.0 : 1.0;
+    const turboMult = isTurbo ? 2.0 : 1.0;
     const mult = (isCrit ? critMultiplier : 1.0) * combo * turboMult;
     const earned = Math.max(1, Math.round(basePower * mult));
 
@@ -108,12 +108,12 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
       sound.playClick();
     }
 
-    // Build combo streak up to x2.0
-    setCombo(prev => Math.min(2.0, +(prev + 0.05).toFixed(2)));
+    // Build combo streak up to x1.5
+    setCombo(prev => Math.min(1.5, +(prev + 0.03).toFixed(2)));
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     comboTimerRef.current = window.setTimeout(() => {
       setCombo(1.0);
-    }, 1200);
+    }, 1000);
 
     // Floating text coordinates
     const rect = e.currentTarget.getBoundingClientRect();
@@ -131,25 +131,22 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
     const relX = clientX - rect.left;
     const relY = clientY - rect.top;
 
+    const newId = Date.now() + Math.random();
     const newFloat: FloatingText = {
-      id: Date.now() + Math.random(),
+      id: newId,
       text: isCrit ? `🔥 +${earned} ₽ (КРИТ!)` : `+${earned} ₽`,
-      x: relX + (Math.random() * 40 - 20),
-      y: relY + (Math.random() * 20 - 10),
+      x: relX + (Math.random() * 30 - 15),
+      y: relY + (Math.random() * 16 - 8),
       isCrit,
     };
 
-    setFloatingTexts(prev => [...prev.slice(-12), newFloat]);
-  };
+    setFloatingTexts(prev => [...prev.slice(-6), newFloat]);
 
-  // Remove floating texts after animation
-  useEffect(() => {
-    if (floatingTexts.length === 0) return;
-    const timer = setTimeout(() => {
-      setFloatingTexts(prev => prev.slice(1));
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [floatingTexts]);
+    // Fast disappear within 280ms per user request
+    window.setTimeout(() => {
+      setFloatingTexts(prev => prev.filter(f => f.id !== newId));
+    }, 280);
+  };
 
   const activateTurbo = () => {
     if (turboCooldown > 0 || isTurbo) return;
@@ -260,13 +257,13 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
             </div>
           </div>
 
-          {/* Floating Text Particles */}
+          {/* Floating Text Particles - Fast Disappear */}
           {floatingTexts.map(item => (
             <div
               key={item.id}
-              className={`absolute pointer-events-none font-black text-sm sm:text-base animate-out fade-out slide-out-to-top duration-700 font-mono-numbers z-30 whitespace-nowrap ${
+              className={`absolute pointer-events-none font-black text-xs sm:text-sm animate-out fade-out slide-out-to-top duration-250 font-mono-numbers z-30 whitespace-nowrap transition-all ${
                 item.isCrit
-                  ? 'text-amber-300 drop-shadow-[0_2px_8px_rgba(245,158,11,0.8)] scale-110'
+                  ? 'text-amber-300 drop-shadow-[0_2px_8px_rgba(245,158,11,0.8)] scale-105'
                   : 'text-emerald-400 drop-shadow-[0_1px_4px_rgba(16,185,129,0.7)]'
               }`}
               style={{ left: `${item.x}px`, top: `${item.y}px` }}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
 import { PhoneNumberCard, RarityTier, AutoSpinFilterSettings, AutoAction } from '../types/game';
 import { rollMultiplePhoneNumbers } from '../utils/numberGenerator';
 import { RARITY_CONFIGS } from '../utils/rarityConfig';
@@ -248,15 +247,12 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
     if (hasMythic) {
       sound.playWinLegendary();
       triggerHaptic('success');
-      confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
     } else if (hasLegendary) {
       sound.playWinLegendary();
       triggerHaptic('success');
-      confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
     } else if (hasEpic) {
       sound.playWinEpic();
       triggerHaptic('success');
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
     } else if (hasRare) {
       sound.playWinRare();
       triggerHaptic('medium');
@@ -841,12 +837,12 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
             <div className="space-y-2 text-xs">
               {Object.values(RARITY_CONFIGS).map(cfg => {
                 let currentChance = cfg.baseChance;
-                if (cfg.id === 'mythic') currentChance += (luckLevel || 0) * 0.005 + (prestigeLevel || 0) * 0.008;
-                if (cfg.id === 'legendary') currentChance += (luckLevel || 0) * 0.03 + (prestigeLevel || 0) * 0.04;
-                if (cfg.id === 'epic') currentChance += (luckLevel || 0) * 0.15 + (prestigeLevel || 0) * 0.15;
-                if (cfg.id === 'rare') currentChance += (luckLevel || 0) * 0.40 + (prestigeLevel || 0) * 0.30;
-                if (cfg.id === 'uncommon') currentChance += (luckLevel || 0) * 0.50;
-                if (cfg.id === 'common') currentChance = Math.max(20, 100 - (0.005 + 0.08 + 1.2 + 4.5 + 14.22 + (luckLevel || 0) * 1.08));
+                if (cfg.id === 'mythic') currentChance += (luckLevel || 0) * 0.0003 + (prestigeLevel || 0) * 0.0005;
+                if (cfg.id === 'legendary') currentChance += (luckLevel || 0) * 0.004 + (prestigeLevel || 0) * 0.006;
+                if (cfg.id === 'epic') currentChance += (luckLevel || 0) * 0.04 + (prestigeLevel || 0) * 0.05;
+                if (cfg.id === 'rare') currentChance += (luckLevel || 0) * 0.12 + (prestigeLevel || 0) * 0.10;
+                if (cfg.id === 'uncommon') currentChance += (luckLevel || 0) * 0.20;
+                if (cfg.id === 'common') currentChance = Math.max(20, 100 - (0.001 + 0.02 + 0.65 + 2.80 + 11.0 + (luckLevel || 0) * 0.364));
 
                 return (
                   <div
@@ -860,7 +856,7 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400 font-mono text-[11px]">x{cfg.minMultiplier}–{cfg.maxMultiplier}</span>
                       <span className="font-bold text-emerald-400 font-mono-numbers">
-                        {currentChance.toFixed(2)}%
+                        {cfg.id === 'mythic' ? currentChance.toFixed(3) : currentChance.toFixed(2)}%
                       </span>
                     </div>
                   </div>

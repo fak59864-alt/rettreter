@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
 import { sound } from '../utils/audio';
 import { triggerHaptic } from '../utils/telegram';
 import {
@@ -146,7 +145,6 @@ export const CasinoTab: React.FC<CasinoTabProps> = ({
         });
         triggerHaptic('success');
         sound.playWinLegendary();
-        confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
       }
     } else {
       setBjState('playing');
@@ -244,7 +242,6 @@ export const CasinoTab: React.FC<CasinoTabProps> = ({
       });
       triggerHaptic('success');
       sound.playWinEpic();
-      confetti({ particleCount: 45, spread: 60, origin: { y: 0.6 } });
     } else if (pScore > finalDScore) {
       // Player score > Dealer score
       const payout = activeBet * 2;
@@ -287,11 +284,11 @@ export const CasinoTab: React.FC<CasinoTabProps> = ({
 
   const getMinesMultiplier = (revealed: number, mines: number): number => {
     if (revealed === 0) return 1.0;
-    let mult = 1.0;
+    let mult = 0.96;
     for (let i = 0; i < revealed; i++) {
       mult *= (25 - i) / (25 - mines - i);
     }
-    return +mult.toFixed(2);
+    return Math.max(1.05, +mult.toFixed(2));
   };
 
   const currentMinesMult = getMinesMultiplier(minesRevealedCount, minesCount);
@@ -361,7 +358,6 @@ export const CasinoTab: React.FC<CasinoTabProps> = ({
 
     triggerHaptic('success');
     sound.playWinEpic();
-    confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
 
     setMinesGrid(prev => prev.map(t => ({ ...t, isRevealed: true })));
     setMinesGameState('cashed_out');
@@ -385,7 +381,7 @@ export const CasinoTab: React.FC<CasinoTabProps> = ({
     sound.playClick();
 
     const r = Math.random();
-    const crashThreshold = r < 0.06 ? 1.0 : +(0.95 / (1 - r)).toFixed(2);
+    const crashThreshold = r < 0.08 ? 1.0 : +(0.94 / (1 - r)).toFixed(2);
     crashPointRef.current = Math.min(100.0, Math.max(1.0, crashThreshold));
 
     setCrashMultiplier(1.0);
@@ -422,7 +418,6 @@ export const CasinoTab: React.FC<CasinoTabProps> = ({
     setCrashState('cashed_out');
     triggerHaptic('success');
     sound.playWinRare();
-    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
   };
 
   useEffect(() => {

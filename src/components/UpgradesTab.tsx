@@ -78,7 +78,7 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
   const coinsPerHour = coinsPerMin * 60;
 
   const prestigeLevel = upgrades.prestigeLevel || 0;
-  const prestigeCost = Math.round(500000 * Math.pow(2.2, prestigeLevel));
+  const prestigeCost = Math.round(1000000 * Math.pow(2.5, prestigeLevel));
   const canPrestige = balance >= prestigeCost;
 
   const renderIcon = (name: string) => {
@@ -299,7 +299,7 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
             <div>
               <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
                 <span>Грант связиста</span>
-                <span className="text-[11px] text-emerald-400 font-mono font-bold">+10 000 ₽</span>
+                <span className="text-[11px] text-emerald-400 font-mono font-bold">+1 000 ₽</span>
               </div>
               <div className="text-[11px] text-slate-400">Пополнение капитала каждые 4 часа</div>
             </div>
@@ -310,7 +310,7 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
               if (bonusCooldown === 0) {
                 triggerHaptic('success');
                 sound.playUpgrade();
-                onClaimBonus(10000);
+                onClaimBonus(1000);
               }
             }}
             disabled={bonusCooldown > 0}

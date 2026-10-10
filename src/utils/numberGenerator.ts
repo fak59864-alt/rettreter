@@ -32,7 +32,7 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
       );
       return {
         rarity: 'mythic',
-        multiplier: isAll10 ? 5000 : 2500,
+        multiplier: isAll10 ? 500 : 250,
         tags,
       };
     }
@@ -53,22 +53,22 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
     const d = digits[0];
     if (d === 7) {
       tags.push('VIP: Три топора 777-77-77', 'Абсолютная удача');
-      return { rarity: 'legendary', multiplier: 500, tags };
+      return { rarity: 'legendary', multiplier: 60, tags };
     }
     tags.push(`Супер-VIP: Все ${d}`, 'Абсолют');
-    return { rarity: 'legendary', multiplier: 450, tags };
+    return { rarity: 'legendary', multiplier: 50, tags };
   }
 
   // Check 6 identical
   if (maxIdentical === 6) {
     tags.push('Шесть одинаковых цифр', 'VIP Эксклюзив');
-    return { rarity: 'legendary', multiplier: 280, tags };
+    return { rarity: 'legendary', multiplier: 38, tags };
   }
 
   // Check 5 identical
   if (maxIdentical === 5) {
     tags.push('Пять одинаковых цифр', 'VIP Премиум');
-    return { rarity: 'legendary', multiplier: 120, tags };
+    return { rarity: 'legendary', multiplier: 25, tags };
   }
 
   // Check round hundreds/thousands (000-00-XX, XX0-00-00, 000-XX-00)
@@ -79,28 +79,28 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
     (tail.slice(0, 3) === '000' && tail.slice(5) === '00');
   if (isRoundHundreds) {
     tags.push('Круглые сотни', 'VIP Нули');
-    return { rarity: 'legendary', multiplier: 95, tags };
+    return { rarity: 'legendary', multiplier: 22, tags };
   }
 
   // Check 7-digit ladder ascending (e.g. 1234567, 2345678, 3456789)
   const isAscending7 = digits.every((d, i) => i === 0 || d === (digits[i - 1] + 1) % 10);
   if (isAscending7) {
     tags.push('Лесенка 7 цифр (123-45-67)', 'Королевский флеш');
-    return { rarity: 'legendary', multiplier: 150, tags };
+    return { rarity: 'legendary', multiplier: 30, tags };
   }
 
   // Check 7-digit ladder descending (e.g. 7654321, 9876543)
   const isDescending7 = digits.every((d, i) => i === 0 || d === (digits[i - 1] - 1 + 10) % 10);
   if (isDescending7) {
     tags.push('Обратная лесенка 7 цифр', 'Королевский флеш');
-    return { rarity: 'legendary', multiplier: 140, tags };
+    return { rarity: 'legendary', multiplier: 28, tags };
   }
 
   // Check 7-digit Palindrome (e.g. 1234321)
   const isPalindrome7 = tail === tail.split('').reverse().join('');
   if (isPalindrome7) {
     tags.push('Палиндром 7 цифр (Зеркало)', 'Золотой номер');
-    return { rarity: 'epic', multiplier: 25, tags };
+    return { rarity: 'epic', multiplier: 10, tags };
   }
 
   // Check consecutive 4 or 3 identical in a row
@@ -121,20 +121,20 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
 
   if (maxConsecutive === 4) {
     tags.push(`Каре: четыре ${consecutiveDigit} подряд`, 'Золотой триплет');
-    return { rarity: 'epic', multiplier: 20, tags };
+    return { rarity: 'epic', multiplier: 8.5, tags };
   }
 
   if (maxConsecutive === 3) {
     if (consecutiveDigit === 7) {
       tags.push('Три топора (777)', 'Счастливый триплет');
-      return { rarity: 'epic', multiplier: 18, tags };
+      return { rarity: 'epic', multiplier: 7.5, tags };
     }
     if (consecutiveDigit === 0) {
       tags.push('Три нуля (000)', 'Чистый номер');
-      return { rarity: 'epic', multiplier: 15, tags };
+      return { rarity: 'epic', multiplier: 6.5, tags };
     }
     tags.push(`Триплет: три ${consecutiveDigit}`, 'Счастливый триплет');
-    return { rarity: 'epic', multiplier: 12, tags };
+    return { rarity: 'epic', multiplier: 5.5, tags };
   }
 
   // Check 5 or 6 digit ladder sub-sequences
@@ -151,7 +151,7 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
     tail.includes('98765');
   if (tailHasLadder5) {
     tags.push('Лесенка из 5 цифр', 'Серебряный');
-    return { rarity: 'rare', multiplier: 4.5, tags };
+    return { rarity: 'rare', multiplier: 2.2, tags };
   }
 
   // Check 5-digit palindrome in tail (e.g. 12321, 78987)
@@ -161,7 +161,7 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
     tail.slice(2, 7) === tail.slice(2, 7).split('').reverse().join('');
   if (isPalindrome5) {
     tags.push('Палиндром x5', 'Серебряное зеркало');
-    return { rarity: 'rare', multiplier: 3.8, tags };
+    return { rarity: 'rare', multiplier: 1.9, tags };
   }
 
   // Check repetitive blocks e.g. AB-AB-AB (e.g. 12-12-12-X or X-12-12-12)
@@ -170,7 +170,7 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
   const p3 = tail.slice(4, 6);
   if ((p1 === p2 && p2 === p3) || (tail.slice(1, 3) === tail.slice(3, 5) && tail.slice(3, 5) === tail.slice(5, 7))) {
     tags.push('Тройной повтор пар (AB-AB-AB)', 'Ритмичный');
-    return { rarity: 'rare', multiplier: 4.2, tags };
+    return { rarity: 'rare', multiplier: 2.0, tags };
   }
 
   // 4-digit ladder
@@ -189,29 +189,29 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
     tail.includes('9876');
   if (tailHasLadder4) {
     tags.push('Лесенка x4 (12-34)', 'Серебряный');
-    return { rarity: 'rare', multiplier: 2.5, tags };
+    return { rarity: 'rare', multiplier: 1.4, tags };
   }
 
   // Check two pairs (e.g., 12-33-44 or 11-22-XX)
   const pairCounts = countsArr.filter(c => c >= 2).length;
   if (pairCounts >= 2) {
     tags.push('Две пары цифр', 'Бронзовый');
-    return { rarity: 'uncommon', multiplier: 0.85, tags };
+    return { rarity: 'uncommon', multiplier: 0.60, tags };
   }
 
   // Check mirror ending (e.g., 12-34-43)
   if (tail[3] === tail[6] && tail[4] === tail[5]) {
     tags.push('Зеркальное окончание', 'Бронзовый');
-    return { rarity: 'uncommon', multiplier: 0.75, tags };
+    return { rarity: 'uncommon', multiplier: 0.50, tags };
   }
 
   if (tail[5] === tail[6]) {
     tags.push('Пара в конце (XX)', 'Бронзовый');
-    return { rarity: 'uncommon', multiplier: 0.6, tags };
+    return { rarity: 'uncommon', multiplier: 0.40, tags };
   }
 
-  // Common: standard random
-  const randomMult = +(0.1 + Math.random() * 0.2).toFixed(2);
+  // Common: standard random (selling yields heavy loss)
+  const randomMult = +(0.05 + Math.random() * 0.12).toFixed(2);
   tags.push('Обычный набор', 'Без выраженного паттерна');
   return { rarity: 'common', multiplier: randomMult, tags };
 }
@@ -333,18 +333,18 @@ export function rollPhoneNumber(
   if (forceRarity) {
     targetRarity = forceRarity;
   } else {
-    // Significantly lowered base chances per prompt request:
-    // Mythic (9 identical digits): 0.005% (1 in 20,000 baseline)
-    // Legendary: 0.08%
-    // Epic: 1.2%
-    // Rare: 4.5%
-    // Uncommon: 14.22%
-    // Common: remainder (~80.0%)
-    const mythicChance = 0.005 + luckLevel * 0.005 + prestigeLevel * 0.008;
-    const legendaryChance = 0.08 + luckLevel * 0.03 + prestigeLevel * 0.04;
-    const epicChance = 1.20 + luckLevel * 0.15 + prestigeLevel * 0.15;
-    const rareChance = 4.50 + luckLevel * 0.40 + prestigeLevel * 0.30;
-    const uncommonChance = 14.22 + luckLevel * 0.50;
+    // Significantly reduced chances per user request:
+    // Mythic: 0.001% (1 in 100,000 spins base!)
+    // Legendary VIP: 0.02% (1 in 5,000 spins base!)
+    // Epic: 0.65%
+    // Rare: 2.80%
+    // Uncommon: 11.00%
+    // Common: remainder (~85.5%)
+    const mythicChance = 0.001 + luckLevel * 0.0003 + prestigeLevel * 0.0005;
+    const legendaryChance = 0.02 + luckLevel * 0.004 + prestigeLevel * 0.006;
+    const epicChance = 0.65 + luckLevel * 0.04 + prestigeLevel * 0.05;
+    const rareChance = 2.80 + luckLevel * 0.12 + prestigeLevel * 0.10;
+    const uncommonChance = 11.00 + luckLevel * 0.20;
 
     const roll = Math.random() * 100;
     if (roll < mythicChance) {
@@ -380,7 +380,7 @@ export function rollPhoneNumber(
     multiplier = +(config.minMultiplier + Math.random() * range).toFixed(2);
   }
 
-  const cashbackBonus = cashbackLevel * 0.06; // +6% per level
+  const cashbackBonus = cashbackLevel * 0.02; // +2% per level (rebalanced)
   const baseSell = Math.round(baseSpinCost * multiplier);
   const finalSellPrice = Math.round(baseSell * (1 + cashbackBonus));
 

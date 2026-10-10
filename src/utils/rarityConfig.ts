@@ -1,11 +1,12 @@
 import { RarityConfig, RarityTier } from '../types/game';
 
-// Base chances lowered per user request:
-// Common: 80.0%
-// Uncommon: 14.22%
-// Rare: 4.5%
-// Epic: 1.2%
-// Legendary VIP: 0.08% (1 in 1250 spins baseline!)
+// Hardcore economy & ultra-low jackpot drop rates:
+// Common: ~85.5%
+// Uncommon: 11.0%
+// Rare: 2.80%
+// Epic: 0.65%
+// Legendary VIP: 0.02% (1 in 5,000 spins baseline!)
+// Mythic 9x: 0.001% (1 in 100,000 spins baseline!)
 export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
   common: {
     id: 'common',
@@ -16,9 +17,9 @@ export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
     bgGradient: 'from-slate-900/90 via-slate-800/80 to-slate-900/95',
     glowClass: 'shadow-slate-900/50',
     textColor: 'text-slate-400',
-    minMultiplier: 0.1,
-    maxMultiplier: 0.3,
-    baseChance: 80.0,
+    minMultiplier: 0.05,
+    maxMultiplier: 0.18,
+    baseChance: 85.529,
   },
   uncommon: {
     id: 'uncommon',
@@ -29,9 +30,9 @@ export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
     bgGradient: 'from-amber-950/60 via-stone-900/90 to-amber-950/40',
     glowClass: 'shadow-amber-500/20',
     textColor: 'text-amber-400',
-    minMultiplier: 0.5,
-    maxMultiplier: 1.0,
-    baseChance: 14.22,
+    minMultiplier: 0.35,
+    maxMultiplier: 0.65,
+    baseChance: 11.00,
   },
   rare: {
     id: 'rare',
@@ -42,9 +43,9 @@ export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
     bgGradient: 'from-sky-950/70 via-slate-900/90 to-blue-950/50',
     glowClass: 'shadow-sky-500/30',
     textColor: 'text-sky-400',
-    minMultiplier: 2.0,
-    maxMultiplier: 5.0,
-    baseChance: 4.5,
+    minMultiplier: 1.20,
+    maxMultiplier: 2.40,
+    baseChance: 2.80,
   },
   epic: {
     id: 'epic',
@@ -55,9 +56,9 @@ export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
     bgGradient: 'from-yellow-950/80 via-neutral-900/90 to-amber-950/60',
     glowClass: 'shadow-yellow-500/40',
     textColor: 'text-yellow-400',
-    minMultiplier: 10.0,
-    maxMultiplier: 25.0,
-    baseChance: 1.2,
+    minMultiplier: 4.0,
+    maxMultiplier: 10.0,
+    baseChance: 0.65,
   },
   legendary: {
     id: 'legendary',
@@ -68,9 +69,9 @@ export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
     bgGradient: 'from-fuchsia-950/80 via-purple-950/90 to-indigo-950/80',
     glowClass: 'shadow-fuchsia-500/50',
     textColor: 'text-fuchsia-400',
-    minMultiplier: 50.0,
-    maxMultiplier: 500.0,
-    baseChance: 0.08,
+    minMultiplier: 20.0,
+    maxMultiplier: 60.0,
+    baseChance: 0.02,
   },
   mythic: {
     id: 'mythic',
@@ -81,9 +82,9 @@ export const RARITY_CONFIGS: Record<RarityTier, RarityConfig> = {
     bgGradient: 'from-rose-950/90 via-purple-950/90 to-red-950/95',
     glowClass: 'shadow-rose-500/60',
     textColor: 'text-rose-400',
-    minMultiplier: 1000.0,
-    maxMultiplier: 5000.0,
-    baseChance: 0.005,
+    minMultiplier: 150.0,
+    maxMultiplier: 500.0,
+    baseChance: 0.001,
   },
 };
 

@@ -17,8 +17,8 @@ interface StepResult {
 
 export const BotAutoSetupModal: React.FC<BotAutoSetupModalProps> = ({ onClose, userId }) => {
   const [activeTab, setActiveTab] = useState<'auto_setup' | 'bot_py' | 'server_py' | 'guide'>('auto_setup');
-  const [botToken, setBotToken] = useState('');
-  const [customUrl, setCustomUrl] = useState('https://afknomera.vercel.app');
+  const [botToken, setBotToken] = useState('8748940272:AAFze_ClMme6PfumQeOad0rIfac-HxNjKWM');
+  const [customUrl, setCustomUrl] = useState('https://rettreterreeer.vercel.app/');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [setupResult, setSetupResult] = useState<{

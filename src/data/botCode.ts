@@ -20,10 +20,10 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 # Токен бота от @BotFather (или задайте через переменную окружения BOT_TOKEN)
-BOT_TOKEN = os.getenv("BOT_TOKEN", "123456789:ABCDefGhIJKlmNoPQRstuVWXyz")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8748940272:AAFze_ClMme6PfumQeOad0rIfac-HxNjKWM")
 
 # URL вашего развернутого Mini App (например, на Vercel, Cloud Run или ngrok)
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://afknomera.vercel.app")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://rettreterreeer.vercel.app/")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

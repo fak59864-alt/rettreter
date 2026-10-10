@@ -27,7 +27,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-const INITIAL_BALANCE = 50000; // 50 000 ₽
+const INITIAL_BALANCE = 2500; // 2 500 ₽ (сбалансированный хардкорный старт)
 
 const INITIAL_UPGRADES: PlayerUpgrades = {
   // Gacha Upgrades
