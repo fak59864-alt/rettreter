@@ -73,7 +73,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
         <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-sm font-bold text-slate-100">Игровая статистика и профиль</h2>
+            <h2 className="text-sm font-bold text-slate-100">Игровая статистика и Зал славы</h2>
           </div>
           <button
             onClick={onClose}

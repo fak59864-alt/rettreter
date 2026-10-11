@@ -321,30 +321,26 @@ export function formatFullPhoneNumber(operatorCode: string, tail: string): strin
   return `+7 (${operatorCode}) ${formatTail(tail)}`;
 }
 
-// Roll a single phone number with lowered base chances and luck scaling
+// Roll a single phone number with balanced base chances and potent luck scaling
 export function rollPhoneNumber(
   baseSpinCost: number,
   luckLevel: number = 0,
   cashbackLevel: number = 0,
   prestigeLevel: number = 0,
-  forceRarity?: RarityTier
+  forceRarity?: RarityTier,
+  jackpotRadarLevel: number = 0
 ): PhoneNumberCard {
   let targetRarity: RarityTier = 'common';
   if (forceRarity) {
     targetRarity = forceRarity;
   } else {
-    // Significantly reduced chances per user request:
-    // Mythic: 0.001% (1 in 100,000 spins base!)
-    // Legendary VIP: 0.02% (1 in 5,000 spins base!)
-    // Epic: 0.65%
-    // Rare: 2.80%
-    // Uncommon: 11.00%
-    // Common: remainder (~85.5%)
-    const mythicChance = 0.001 + luckLevel * 0.0003 + prestigeLevel * 0.0005;
-    const legendaryChance = 0.02 + luckLevel * 0.004 + prestigeLevel * 0.006;
-    const epicChance = 0.65 + luckLevel * 0.04 + prestigeLevel * 0.05;
-    const rareChance = 2.80 + luckLevel * 0.12 + prestigeLevel * 0.10;
-    const uncommonChance = 11.00 + luckLevel * 0.20;
+    // Powerful, noticeable luck scaling per user request
+    const effectiveLuck = luckLevel + jackpotRadarLevel * 0.75;
+    const mythicChance = 0.002 + effectiveLuck * 0.006 + prestigeLevel * 0.012;
+    const legendaryChance = 0.05 + effectiveLuck * 0.07 + prestigeLevel * 0.12;
+    const epicChance = 0.85 + effectiveLuck * 0.38 + prestigeLevel * 0.60;
+    const rareChance = 3.50 + effectiveLuck * 0.80 + prestigeLevel * 1.20;
+    const uncommonChance = 12.00 + effectiveLuck * 1.40 + prestigeLevel * 1.50;
 
     const roll = Math.random() * 100;
     if (roll < mythicChance) {
@@ -409,11 +405,12 @@ export function rollMultiplePhoneNumbers(
   costPerCard: number,
   luckLevel: number = 0,
   cashbackLevel: number = 0,
-  prestigeLevel: number = 0
+  prestigeLevel: number = 0,
+  jackpotRadarLevel: number = 0
 ): PhoneNumberCard[] {
   const cards: PhoneNumberCard[] = [];
   for (let i = 0; i < count; i++) {
-    cards.push(rollPhoneNumber(costPerCard, luckLevel, cashbackLevel, prestigeLevel));
+    cards.push(rollPhoneNumber(costPerCard, luckLevel, cashbackLevel, prestigeLevel, undefined, jackpotRadarLevel));
   }
   return cards;
 }

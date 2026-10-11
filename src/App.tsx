@@ -18,7 +18,6 @@ import { TradeTab } from './components/TradeTab';
 import { OfflineRewardModal } from './components/OfflineRewardModal';
 import { BotAutoSetupModal } from './components/BotAutoSetupModal';
 import { StatsModal } from './components/StatsModal';
-import { LeaderboardModal } from './components/LeaderboardModal';
 import {
   Sparkles,
   MousePointerClick,
@@ -99,7 +98,6 @@ export default function App() {
   // Modals
   const [showDocsModal, setShowDocsModal] = useState<boolean>(false);
   const [showStatsModal, setShowStatsModal] = useState<boolean>(false);
-  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
 
   // Calculate coins per second from collection and rent upgrades
   const coinsPerSec = calculateCoinsPerSec(collection, upgrades);
@@ -118,9 +116,6 @@ export default function App() {
     }
     if (urlParams.get('trade') || urlParams.get('gift')) {
       setActiveTab('trade');
-    }
-    if (urlParams.get('modal') === 'top' || rawTabParam === 'leaderboard' || rawTabParam === 'top') {
-      setShowLeaderboard(true);
     }
 
     try {
@@ -351,11 +346,31 @@ export default function App() {
   };
 
   const handlePrestigeReset = () => {
-    setUpgrades(prev => ({
+    const nextPrestige = (upgrades.prestigeLevel || 0) + 1;
+    const cleanUpgrades: PlayerUpgrades = {
       ...INITIAL_UPGRADES,
-      prestigeLevel: (prev.prestigeLevel || 0) + 1,
-    }));
+      prestigeLevel: nextPrestige,
+    };
+
+    // 1. Reset all upgrades back to initial state, keeping only new prestige rank
+    setUpgrades(cleanUpgrades);
+
+    // 2. Reset balance back to initial starting balance (2,500 ₽)
+    setBalance(INITIAL_BALANCE);
+
+    // 3. Reset entire SIM card collection to empty
+    setCollection([]);
+
+    // 4. Force save the reset immediately to user storage
+    if (userData.id) {
+      localStorage.setItem(`sim_gacha_${userData.id}_balance`, String(INITIAL_BALANCE));
+      localStorage.setItem(`sim_gacha_${userData.id}_collection`, JSON.stringify([]));
+      localStorage.setItem(`sim_gacha_${userData.id}_upgrades`, JSON.stringify(cleanUpgrades));
+      localStorage.setItem(`sim_gacha_${userData.id}_last_active`, String(Date.now()));
+    }
+
     triggerHaptic('success');
+    sound.playWinLegendary();
   };
 
   const handleUpdateBalance = (delta: number) => {
@@ -406,7 +421,6 @@ export default function App() {
         onToggleMute={handleToggleMute}
         onOpenStats={() => setShowStatsModal(true)}
         onOpenShop={() => setActiveTab('shop')}
-        onOpenLeaderboard={() => setShowLeaderboard(true)}
       />
 
       {/* Main Content Viewport */}
@@ -419,6 +433,7 @@ export default function App() {
             discountLevel={upgrades.discountLevel}
             cashbackLevel={upgrades.cashbackLevel}
             prestigeLevel={upgrades.prestigeLevel}
+            jackpotRadarLevel={upgrades.jackpotRadarLevel}
             inventoryCount={collection.length}
             maxInventory={maxInventory}
             onSpinSuccess={handleSpinSuccess}
@@ -609,21 +624,6 @@ export default function App() {
           balance={balance}
           onClose={() => setShowStatsModal(false)}
           onOpenAdminSetup={() => setShowDocsModal(true)}
-          onOpenLeaderboard={() => setShowLeaderboard(true)}
-        />
-      )}
-
-      {/* Leaderboard Modal (Топ реальных пользователей по балансу) */}
-      {showLeaderboard && (
-        <LeaderboardModal
-          currentUser={userData}
-          currentBalance={balance}
-          currentLevel={playerLevel}
-          onClose={() => setShowLeaderboard(false)}
-          onNavigateToSpin={() => {
-            setShowLeaderboard(false);
-            setActiveTab('spin');
-          }}
         />
       )}
 

@@ -47,6 +47,7 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
 }) => {
   const [subTab, setSubTab] = useState<'rent' | 'clicker' | 'gacha' | 'prestige'>('rent');
   const [bonusCooldown, setBonusCooldown] = useState<number>(0);
+  const [showPrestigeConfirm, setShowPrestigeConfirm] = useState<boolean>(false);
 
   const COOLDOWN_SEC = 4 * 60 * 60; // 4 hours
 
@@ -78,7 +79,7 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
   const coinsPerHour = coinsPerMin * 60;
 
   const prestigeLevel = upgrades.prestigeLevel || 0;
-  const prestigeCost = Math.round(1000000 * Math.pow(2.5, prestigeLevel));
+  const prestigeCost = Math.round(150000 * Math.pow(2.2, prestigeLevel));
   const canPrestige = balance >= prestigeCost;
 
   const renderIcon = (name: string) => {
@@ -240,12 +241,26 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
             </div>
           </div>
 
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Престиж сбрасывает уровни базовых улучшений взамен на постоянный несгораемый множитель:
-            <br />
-            <strong>+50% к пассивному доходу всех номеров навсегда</strong> и{' '}
-            <strong>+1% к шансу редких номеров</strong> за каждый полученный ранг!
-          </p>
+          <div className="p-3.5 rounded-2xl bg-rose-950/20 border border-rose-500/30 text-rose-200 text-xs space-y-1">
+            <div className="font-extrabold flex items-center gap-1.5 text-rose-300">
+              <span>⚠️ ВНИМАНИЕ: Полный сброс прогресса</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-snug">
+              Престиж сбрасывает <strong>абсолютно всё</strong>: текущий баланс, <strong>всю коллекцию SIM-карт</strong> и все купленные улучшения (рента, кликер, удача).
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 text-amber-200 text-xs space-y-1">
+            <div className="font-extrabold flex items-center gap-1.5 text-amber-300">
+              <Crown className="w-3.5 h-3.5" />
+              <span>Постоянные награды за ранг:</span>
+            </div>
+            <ul className="text-[11px] text-slate-300 space-y-0.5 list-disc list-inside">
+              <li><strong>+50%</strong> к доходу всех будущих номеров навсегда</li>
+              <li><strong>+1.2%</strong> к шансу редких, VIP и Mythic номеров навсегда</li>
+              <li>Несгораемый статус и эксклюзивный значок в профиле</li>
+            </ul>
+          </div>
 
           <div className="p-3 rounded-2xl bg-[#0b0e14] border border-slate-800 space-y-1.5 text-xs">
             <div className="flex justify-between text-slate-400">
@@ -265,9 +280,8 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
           <button
             onClick={() => {
               if (canPrestige) {
-                triggerHaptic('success');
-                sound.playWinLegendary();
-                onPrestigeReset();
+                triggerHaptic('medium');
+                setShowPrestigeConfirm(true);
               } else {
                 triggerHaptic('error');
               }
@@ -286,6 +300,64 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
                 : `Требуется ${prestigeCost.toLocaleString('ru-RU')} ₽`}
             </span>
           </button>
+
+          {/* Full Reset Confirmation Modal */}
+          {showPrestigeConfirm && (
+            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-[#12151d] border-2 border-rose-500/60 rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                  <Crown className="w-7 h-7" />
+                </div>
+
+                <div className="text-center space-y-1">
+                  <h3 className="font-black text-base text-slate-100">
+                    Сбросить абсолютно всё?
+                  </h3>
+                  <p className="text-xs text-rose-300 font-medium">
+                    Это действие необратимо и обнулит весь ваш текущий прогресс!
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-xs space-y-2 text-slate-300">
+                  <div className="flex items-center gap-2 text-rose-400">
+                    <span>❌ Баланс сбросится до стартовых 2 500 ₽</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-rose-400">
+                    <span>❌ Вся коллекция SIM-карт ({collection.length} шт.) удалится</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-rose-400">
+                    <span>❌ Все купленные улучшения сбросятся до 0</span>
+                  </div>
+                  <div className="border-t border-slate-800 pt-2 flex items-center gap-2 text-emerald-400 font-bold">
+                    <span>⭐ Вы получите ранг престижа {(prestigeLevel + 1)}★ (+50% доход навсегда)!</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <button
+                    onClick={() => {
+                      setShowPrestigeConfirm(false);
+                      triggerHaptic('success');
+                      sound.playWinLegendary();
+                      onPrestigeReset();
+                    }}
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-black text-xs shadow-lg shadow-rose-900/30 active:scale-95 transition-all"
+                  >
+                    Да, сбросить всё и получить Престиж!
+                  </button>
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setShowPrestigeConfirm(false);
+                    }}
+                    className="w-full h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs active:scale-95 transition-all"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

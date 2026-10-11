@@ -27,6 +27,7 @@ interface GachaWheelProps {
   discountLevel: number;
   cashbackLevel: number;
   prestigeLevel: number;
+  jackpotRadarLevel?: number;
   inventoryCount: number;
   maxInventory: number;
   onSpinSuccess: (cards: PhoneNumberCard[], cost: number) => void;
@@ -53,6 +54,7 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
   discountLevel,
   cashbackLevel,
   prestigeLevel,
+  jackpotRadarLevel = 0,
   inventoryCount,
   maxInventory,
   onSpinSuccess,
@@ -195,11 +197,12 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
 
     // Roll new batch of phone numbers
     const newCards = rollMultiplePhoneNumbers(
-      currentSimCount,
-      currentCostPerCard,
-      luckLevel,
-      cashbackLevel,
-      prestigeLevel
+       currentSimCount,
+       currentCostPerCard,
+       luckLevel,
+       cashbackLevel,
+       prestigeLevel,
+       jackpotRadarLevel
     );
 
     const isAuto = isAutoSpinningRef.current || isAutoTrigger;

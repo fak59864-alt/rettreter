@@ -53,7 +53,7 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
     if (autoClicksPerSec <= 0) return;
 
     const interval = setInterval(() => {
-      const basePower = 1 + (upgrades.clickPowerLevel || 0) * 1;
+      const basePower = 2 + (upgrades.clickPowerLevel || 0) * 2;
       const turboMult = isTurbo ? 2 : 1;
       const earned = Math.round(basePower * autoClicksPerSec * turboMult);
 
@@ -82,10 +82,10 @@ export const ClickerTab: React.FC<ClickerTabProps> = ({
     }
   }, [turboCooldown]);
 
-  // Calculate tap power (rebalanced for challenging progression)
-  const basePower = 1 + (upgrades.clickPowerLevel || 0) * 1;
-  const critChance = Math.min(25, (upgrades.clickCritChanceLevel || 0) * 0.6);
-  const critMultiplier = 1.6 + (upgrades.clickCritMultLevel || 0) * 0.15;
+  // Calculate tap power with potent crit chance & multiplier
+  const basePower = 2 + (upgrades.clickPowerLevel || 0) * 2;
+  const critChance = Math.min(45, (upgrades.clickCritChanceLevel || 0) * 1.5);
+  const critMultiplier = 2.0 + (upgrades.clickCritMultLevel || 0) * 0.25;
 
   const handleChipClick = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     setIsPressed(true);
