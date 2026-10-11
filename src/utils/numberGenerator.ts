@@ -1,5 +1,11 @@
-import { PhoneNumberCard, RarityTier } from '../types/game';
-import { OPERATORS, RARITY_CONFIGS } from './rarityConfig';
+import { CountryId, PhoneNumberCard, RarityTier } from '../types/game';
+import {
+  COUNTRIES,
+  OPERATORS,
+  OPERATORS_BY_COUNTRY,
+  RARITY_CONFIGS,
+  getCountryConfig,
+} from './rarityConfig';
 
 interface AnalysisResult {
   rarity: RarityTier;
@@ -120,21 +126,21 @@ export function analyzeTail(tail: string, operatorCode?: string): AnalysisResult
   }
 
   if (maxConsecutive === 4) {
-    tags.push(`Каре: четыре ${consecutiveDigit} подряд`, 'Золотой триплет');
-    return { rarity: 'epic', multiplier: 8.5, tags };
+    tags.push(`Каре: четыре ${consecutiveDigit} подряд`, 'Золотой номер');
+    return { rarity: 'epic', multiplier: 4.5, tags };
   }
 
   if (maxConsecutive === 3) {
     if (consecutiveDigit === 7) {
-      tags.push('Три топора (777)', 'Счастливый триплет');
-      return { rarity: 'epic', multiplier: 7.5, tags };
+      tags.push('Три топора (777)', 'Счастливый номер');
+      return { rarity: 'rare', multiplier: 1.8, tags };
     }
     if (consecutiveDigit === 0) {
       tags.push('Три нуля (000)', 'Чистый номер');
-      return { rarity: 'epic', multiplier: 6.5, tags };
+      return { rarity: 'rare', multiplier: 1.6, tags };
     }
-    tags.push(`Триплет: три ${consecutiveDigit}`, 'Счастливый триплет');
-    return { rarity: 'epic', multiplier: 5.5, tags };
+    tags.push(`Триплет: три ${consecutiveDigit}`, 'Бронзовая тройка');
+    return { rarity: 'uncommon', multiplier: 0.65, tags };
   }
 
   // Check 5 or 6 digit ladder sub-sequences
@@ -317,18 +323,34 @@ export function formatTail(tail: string): string {
   return `${clean.slice(0, 3)}-${clean.slice(3, 5)}-${clean.slice(5, 7)}`;
 }
 
-export function formatFullPhoneNumber(operatorCode: string, tail: string): string {
-  return `+7 (${operatorCode}) ${formatTail(tail)}`;
+export function formatFullPhoneNumber(
+  operatorCode: string,
+  tail: string,
+  dialCode: string = '+7'
+): string {
+  const formatted = formatTail(tail);
+  return `${dialCode} (${operatorCode}) ${formatted}`;
 }
 
-// Roll a single phone number with balanced base chances and potent luck scaling
+const RARITY_POWER: Record<RarityTier, number> = {
+  common: 0,
+  uncommon: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+  mythic: 5,
+};
+
+// Roll a single phone number with country economic scaling, luck scaling and guaranteed min rarity
 export function rollPhoneNumber(
   baseSpinCost: number,
   luckLevel: number = 0,
   cashbackLevel: number = 0,
   prestigeLevel: number = 0,
   forceRarity?: RarityTier,
-  jackpotRadarLevel: number = 0
+  jackpotRadarLevel: number = 0,
+  countryId: CountryId = 'RU',
+  guaranteedMinRarity?: RarityTier
 ): PhoneNumberCard {
   let targetRarity: RarityTier = 'common';
   if (forceRarity) {
@@ -356,32 +378,46 @@ export function rollPhoneNumber(
     } else {
       targetRarity = 'common';
     }
+
+    // Apply bet tier guarantee if set and rolled lower than the minimum guarantee
+    if (guaranteedMinRarity && RARITY_POWER[targetRarity] < RARITY_POWER[guaranteedMinRarity]) {
+      targetRarity = guaranteedMinRarity;
+    }
   }
 
-  let operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+  const country = getCountryConfig(countryId);
+  const countryOperators = OPERATORS_BY_COUNTRY[countryId] || OPERATORS;
+  let operator = countryOperators[Math.floor(Math.random() * countryOperators.length)];
+
   if (targetRarity === 'mythic') {
-    const mythicOps = OPERATORS.filter(o => o.code === '999' || o.code === '777' || o.code === '977');
-    operator = mythicOps[Math.floor(Math.random() * mythicOps.length)] || OPERATORS[0];
+    const mythicOps = countryOperators.filter(o => o.code === '999' || o.code === '777' || o.code === '977' || o.code === '50' || o.code === '212');
+    if (mythicOps.length > 0) {
+      operator = mythicOps[Math.floor(Math.random() * mythicOps.length)];
+    }
   }
 
   const rawTail = generateTailForRarity(targetRarity, operator.code);
   const analysis = analyzeTail(rawTail, operator.code);
 
-  const finalRarity = analysis.rarity;
+  const finalRarity = targetRarity !== 'common' ? targetRarity : analysis.rarity;
   const config = RARITY_CONFIGS[finalRarity];
 
   let multiplier = analysis.multiplier;
-  if (!multiplier) {
+  if (!multiplier || analysis.rarity !== finalRarity) {
     const range = config.maxMultiplier - config.minMultiplier;
     multiplier = +(config.minMultiplier + Math.random() * range).toFixed(2);
   }
 
-  const cashbackBonus = cashbackLevel * 0.02; // +2% per level (rebalanced)
-  const baseSell = Math.round(baseSpinCost * multiplier);
-  const finalSellPrice = Math.round(baseSell * (1 + cashbackBonus));
+  const cashbackBonus = cashbackLevel * 0.02; // +2% per level
+  // Card spinCost and sellPrice are directly based on the actual spin cost paid (including country & bet multiplier)
+  const effectiveCost = Math.max(50, Math.round(baseSpinCost));
+  const baseSell = Math.round(effectiveCost * multiplier);
+  const finalSellPrice = Math.max(1, Math.round(baseSell * (1 + cashbackBonus)));
 
   const tailFormatted = formatTail(rawTail);
-  const fullNumber = formatFullPhoneNumber(operator.code, rawTail);
+  const fullNumber = formatFullPhoneNumber(operator.code, rawTail, country.dialCode);
+
+  const tags = [`${country.flag} ${country.name}`, ...analysis.tags];
 
   return {
     id: `sim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -393,9 +429,12 @@ export function rollPhoneNumber(
     rarity: finalRarity,
     multiplier,
     sellPrice: finalSellPrice,
-    spinCost: baseSpinCost,
-    tags: analysis.tags,
+    spinCost: effectiveCost,
+    tags,
     createdAt: Date.now(),
+    countryId: country.id,
+    countryFlag: country.flag,
+    countryIncomeMultiplier: country.incomeMultiplier,
   };
 }
 
@@ -406,11 +445,24 @@ export function rollMultiplePhoneNumbers(
   luckLevel: number = 0,
   cashbackLevel: number = 0,
   prestigeLevel: number = 0,
-  jackpotRadarLevel: number = 0
+  jackpotRadarLevel: number = 0,
+  countryId: CountryId = 'RU',
+  guaranteedMinRarity?: RarityTier
 ): PhoneNumberCard[] {
   const cards: PhoneNumberCard[] = [];
   for (let i = 0; i < count; i++) {
-    cards.push(rollPhoneNumber(costPerCard, luckLevel, cashbackLevel, prestigeLevel, undefined, jackpotRadarLevel));
+    cards.push(
+      rollPhoneNumber(
+        costPerCard,
+        luckLevel,
+        cashbackLevel,
+        prestigeLevel,
+        undefined,
+        jackpotRadarLevel,
+        countryId,
+        guaranteedMinRarity
+      )
+    );
   }
   return cards;
 }

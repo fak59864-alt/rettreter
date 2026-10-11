@@ -67,8 +67,9 @@ export const CollectionTab: React.FC<CollectionTabProps> = ({
 
   const collectionIncome = useMemo(() => {
     return collection.reduce((acc, c) => {
-      const base = BASE_NUMBER_INCOME[c.rarity] || 3;
-      return acc + (c.isFavorite ? base * 1.25 : base);
+      const base = BASE_NUMBER_INCOME[c.rarity] || 0.2;
+      const countryMult = c.countryIncomeMultiplier || 1.0;
+      return acc + (c.isFavorite ? base * countryMult * 1.25 : base * countryMult);
     }, 0);
   }, [collection]);
 
@@ -98,7 +99,7 @@ export const CollectionTab: React.FC<CollectionTabProps> = ({
           {collection.length > 0 && (
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 mt-1">
               <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400 animate-pulse" />
-              <span>Доход номеров: +{Math.round(collectionIncome)} ₽/сек</span>
+              <span>Доход номеров: +{collectionIncome >= 10 ? Math.round(collectionIncome) : collectionIncome.toFixed(1)} ₽/сек</span>
             </div>
           )}
         </div>

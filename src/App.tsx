@@ -14,7 +14,6 @@ import { CollectionTab } from './components/CollectionTab';
 import { ClickerTab } from './components/ClickerTab';
 import { UpgradesTab } from './components/UpgradesTab';
 import { CasinoTab } from './components/CasinoTab';
-import { TradeTab } from './components/TradeTab';
 import { OfflineRewardModal } from './components/OfflineRewardModal';
 import { BotAutoSetupModal } from './components/BotAutoSetupModal';
 import { StatsModal } from './components/StatsModal';
@@ -23,11 +22,10 @@ import {
   MousePointerClick,
   Dices,
   BookmarkPlus,
-  Gift,
   TrendingUp,
 } from 'lucide-react';
 
-const INITIAL_BALANCE = 2500; // 2 500 ₽ (сбалансированный хардкорный старт)
+const INITIAL_BALANCE = 500; // 500 ₽ (сбалансированный старт)
 
 const INITIAL_UPGRADES: PlayerUpgrades = {
   // Gacha Upgrades
@@ -75,7 +73,7 @@ const INITIAL_STATS: PlayerStats = {
   lastActiveTimestamp: Date.now(),
 };
 
-type ActiveTab = 'spin' | 'clicker' | 'casino' | 'collection' | 'trade' | 'shop';
+type ActiveTab = 'spin' | 'clicker' | 'casino' | 'collection' | 'shop';
 
 export default function App() {
   const [userData, setUserData] = useState<TelegramUserData>({
@@ -111,11 +109,8 @@ export default function App() {
     // Check query params if opened with deep-link
     const urlParams = new URLSearchParams(window.location.search);
     const rawTabParam = urlParams.get('tab');
-    if (rawTabParam && ['spin', 'clicker', 'casino', 'collection', 'trade', 'shop'].includes(rawTabParam)) {
+    if (rawTabParam && ['spin', 'clicker', 'casino', 'collection', 'shop'].includes(rawTabParam)) {
       setActiveTab(rawTabParam as ActiveTab);
-    }
-    if (urlParams.get('trade') || urlParams.get('gift')) {
-      setActiveTab('trade');
     }
 
     try {
@@ -457,7 +452,15 @@ export default function App() {
         {activeTab === 'casino' && (
           <CasinoTab
             balance={balance}
+            collection={collection}
             onUpdateBalance={handleUpdateBalance}
+            onReplaceCard={(oldId, newCard) =>
+              setCollection(prev => prev.map(c => (c.id === oldId ? newCard : c)))
+            }
+            onRemoveCard={cardId =>
+              setCollection(prev => prev.filter(c => c.id !== cardId))
+            }
+            onAddCard={card => handleAddToCollection(card)}
             onRecordCasinoWin={handleRecordCasinoWin}
           />
         )}
@@ -470,21 +473,6 @@ export default function App() {
             onSellAllCommons={handleSellAllCommons}
             onToggleFavorite={handleToggleFavorite}
             onGoToSpin={() => setActiveTab('spin')}
-          />
-        )}
-
-        {activeTab === 'trade' && (
-          <TradeTab
-            balance={balance}
-            collection={collection}
-            userId={userData.id}
-            userName={userData.first_name}
-            maxInventory={maxInventory}
-            onUpdateBalance={handleUpdateBalance}
-            onAddCardToCollection={handleAddToCollection}
-            onRemoveCardFromCollection={(cardId: string) =>
-              setCollection(prev => prev.filter(c => c.id !== cardId))
-            }
           />
         )}
 
@@ -501,9 +489,9 @@ export default function App() {
         )}
       </main>
 
-      {/* Fixed Bottom Mobile Tab Bar (6 Tabs) */}
+      {/* Fixed Bottom Mobile Tab Bar (5 Tabs) */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0d0f12]/95 backdrop-blur-md border-t border-slate-800/90 pb-safe">
-        <div className="max-w-md mx-auto grid grid-cols-6 h-16 items-center px-1">
+        <div className="max-w-md mx-auto grid grid-cols-5 h-16 items-center px-1">
           {/* Tab 1: Spin (Номера) */}
           <button
             onClick={() => {
@@ -571,22 +559,7 @@ export default function App() {
             <span className="text-[9px] tracking-tight">Коллекция</span>
           </button>
 
-          {/* Tab 5: Trade (Подарить / Принять) */}
-          <button
-            onClick={() => {
-              triggerHaptic('selection');
-              sound.playClick();
-              setActiveTab('trade');
-            }}
-            className={`flex flex-col items-center justify-center h-full transition-colors active:scale-95 ${
-              activeTab === 'trade' ? 'text-emerald-400 font-extrabold' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Gift className="w-4 h-4 mb-1 text-rose-400" />
-            <span className="text-[9px] tracking-tight">Подарить</span>
-          </button>
-
-          {/* Tab 6: Upgrades (Прокачка) */}
+          {/* Tab 5: Upgrades (Прокачка) */}
           <button
             onClick={() => {
               triggerHaptic('selection');

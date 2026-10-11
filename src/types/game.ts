@@ -14,6 +14,42 @@ export interface RarityConfig {
   baseChance: number; // in percent (lowered for true prestige)
 }
 
+export type CountryId =
+  | 'RU'
+  | 'BY'
+  | 'KZ'
+  | 'AE'
+  | 'ABH'
+  | 'UA'
+  | 'DE'
+  | 'AZ'
+  | 'AM'
+  | 'GE'
+  | 'US'
+  | 'UZ';
+
+export type BetTierId = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface CountryInfo {
+  id: CountryId;
+  name: string;
+  flag: string;
+  dialCode: string;
+  currency: string;
+  costMultiplier: number;
+  incomeMultiplier: number;
+  tierLabel: string;
+}
+
+export interface BetTierInfo {
+  id: BetTierId;
+  title: string;
+  sub: string;
+  multiplier: number; // cost multiplier: 1x, 8x, 35x, 110x, 820x
+  minRarity: RarityTier;
+  color: string;
+}
+
 export interface PhoneNumberCard {
   id: string;
   fullNumber: string; // e.g. +7 (999) 777-77-77
@@ -28,6 +64,9 @@ export interface PhoneNumberCard {
   tags: string[];
   createdAt: number;
   isFavorite?: boolean;
+  countryId?: CountryId;
+  countryFlag?: string;
+  countryIncomeMultiplier?: number;
 }
 
 // Auto-spin filter rule
@@ -92,26 +131,6 @@ export interface TelegramUserData {
   photo_url?: string;
   auth_date?: number;
   isLinkedToTelegram?: boolean;
-}
-
-// P2P Trade & Market Offer
-export interface MarketListing {
-  id: string;
-  sellerId: number;
-  sellerName: string;
-  card: PhoneNumberCard;
-  price: number;
-  createdAt: number;
-}
-
-export interface DirectTradeOffer {
-  code: string; // e.g. TRADE-777-K9
-  senderId: number;
-  senderName: string;
-  offeredCards: PhoneNumberCard[];
-  requestedPrice: number;
-  createdAt: number;
-  expiresAt: number;
 }
 
 export interface LeaderboardUser {

@@ -1,7 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PhoneNumberCard, RarityTier, AutoSpinFilterSettings, AutoAction } from '../types/game';
+import {
+  PhoneNumberCard,
+  RarityTier,
+  AutoSpinFilterSettings,
+  AutoAction,
+  CountryId,
+  BetTierId,
+} from '../types/game';
 import { rollMultiplePhoneNumbers } from '../utils/numberGenerator';
-import { RARITY_CONFIGS } from '../utils/rarityConfig';
+import {
+  RARITY_CONFIGS,
+  COUNTRIES,
+  OPERATORS_BY_COUNTRY,
+  BET_TIERS,
+  OPERATORS,
+} from '../utils/rarityConfig';
 import { SimCardView } from './SimCardView';
 import { BASE_NUMBER_INCOME } from '../utils/afkFarm';
 import { sound } from '../utils/audio';
@@ -19,6 +32,9 @@ import {
   Check,
   Trash2,
   Zap,
+  ChevronDown,
+  Globe,
+  Target,
 } from 'lucide-react';
 
 interface GachaWheelProps {
@@ -68,6 +84,12 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
   const [isSpinning, setIsSpinning] = useState(false);
   const [droppedCards, setDroppedCards] = useState<PhoneNumberCard[]>([]);
 
+  // Country and Bet Tier states
+  const [selectedCountry, setSelectedCountry] = useState<CountryId>('RU');
+  const [selectedBetTier, setSelectedBetTier] = useState<BetTierId>('common');
+  const [showCountryModal, setShowCountryModal] = useState<boolean>(false);
+  const [showBetModal, setShowBetModal] = useState<boolean>(false);
+
   // Auto-spin state & smart filter
   const [isAutoSpinning, setIsAutoSpinning] = useState<boolean>(false);
   const [filterSettings, setFilterSettings] = useState<AutoSpinFilterSettings>(DEFAULT_FILTER_SETTINGS);
@@ -79,10 +101,23 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
   const [displayDigits, setDisplayDigits] = useState<string[]>(['7', '7', '7', '1', '2', '3', '4']);
   const [displayOperator, setDisplayOperator] = useState<string>('999');
 
-  // Single card spin cost with discount
-  const baseCost = 1000;
-  const discountRate = (discountLevel || 0) * 0.025; // 2.5% discount per level (up to 50%)
-  const singleSpinCost = Math.max(500, Math.round(baseCost * (1 - discountRate)));
+  const currentCountry = COUNTRIES.find(c => c.id === selectedCountry) || COUNTRIES[0];
+  const currentBetConfig = BET_TIERS.find(b => b.id === selectedBetTier) || BET_TIERS[0];
+
+  useEffect(() => {
+    const ops = OPERATORS_BY_COUNTRY[selectedCountry];
+    if (ops && ops.length > 0) {
+      setDisplayOperator(ops[0].code);
+    }
+  }, [selectedCountry]);
+
+  // Single card spin cost with discount, country economic multiplier & bet tier multiplier
+  const baseCost = 100;
+  const discountRate = (discountLevel || 0) * 0.0125; // 1.25% discount per level (up to 50%)
+  const discountedBaseSpinCost = Math.max(50, Math.round(baseCost * (1 - discountRate)));
+  const singleSpinCost = Math.round(
+    discountedBaseSpinCost * currentCountry.costMultiplier * currentBetConfig.multiplier
+  );
   const totalCost = singleSpinCost * simCount;
 
   const canAfford = balance >= totalCost;
@@ -119,6 +154,12 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
 
   const droppedCardsRef = useRef(droppedCards);
   droppedCardsRef.current = droppedCards;
+
+  const selectedCountryRef = useRef(selectedCountry);
+  selectedCountryRef.current = selectedCountry;
+
+  const selectedBetTierRef = useRef(selectedBetTier);
+  selectedBetTierRef.current = selectedBetTier;
 
   useEffect(() => {
     return () => {
@@ -196,13 +237,16 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
     sound.playClick();
 
     // Roll new batch of phone numbers
+    const activeBet = BET_TIERS.find(b => b.id === selectedBetTierRef.current) || BET_TIERS[0];
     const newCards = rollMultiplePhoneNumbers(
-       currentSimCount,
-       currentCostPerCard,
-       luckLevel,
-       cashbackLevel,
-       prestigeLevel,
-       jackpotRadarLevel
+      currentSimCount,
+      currentCostPerCard,
+      luckLevel,
+      cashbackLevel,
+      prestigeLevel,
+      jackpotRadarLevel,
+      selectedCountryRef.current,
+      activeBet.minRarity
     );
 
     const isAuto = isAutoSpinningRef.current || isAutoTrigger;
@@ -210,7 +254,7 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
     const totalFrames = isAuto ? 10 : 14;
     const frameDelay = isAuto ? 40 : 55;
     const targetDigits = newCards[0].rawTail.split('');
-    const ops = ['999', '777', '916', '926', '903', '977', '995'];
+    const countryOps = (OPERATORS_BY_COUNTRY[selectedCountryRef.current] || OPERATORS).map(o => o.code);
 
     if (intervalRef.current) clearInterval(intervalRef.current);
 
@@ -219,13 +263,20 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
       sound.playReelTick(counter);
       if (!isAuto) triggerHaptic('selection');
 
+      // Randomize operator during spin
+      if (countryOps.length > 0) {
+        setDisplayOperator(countryOps[Math.floor(Math.random() * countryOps.length)]);
+      }
+
       setDisplayDigits(prev =>
         prev.map((_, idx) => {
           if (counter > totalFrames - 7 + idx) return targetDigits[idx];
           return Math.floor(Math.random() * 10).toString();
         })
       );
-      setDisplayOperator(ops[Math.floor(Math.random() * ops.length)]);
+      if (countryOps.length > 0) {
+        setDisplayOperator(countryOps[Math.floor(Math.random() * countryOps.length)]);
+      }
 
       if (counter >= totalFrames) {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -389,12 +440,65 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
             </div>
           </div>
 
+          {/* Country & Bet Tier Quick Selectors */}
+          <div className="grid grid-cols-2 gap-2 my-2.5">
+            {/* Country Selector Button */}
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                sound.playClick();
+                setShowCountryModal(true);
+              }}
+              className="bg-[#0e1117] hover:bg-[#161a24] border border-slate-800 hover:border-slate-700/80 rounded-2xl p-2 sm:p-2.5 flex items-center justify-between text-left transition-all active:scale-[0.98] shadow-sm group"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl sm:text-2xl shrink-0 leading-none">{currentCountry.flag}</span>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-slate-100 truncate flex items-center gap-1">
+                    <span>{currentCountry.name}</span>
+                    <span className="text-[10px] text-slate-400 font-mono font-normal">({currentCountry.dialCode})</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-amber-400 truncate flex items-center gap-1">
+                    <span>{currentCountry.tierLabel}</span>
+                  </div>
+                </div>
+              </div>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-200 shrink-0 ml-1" />
+            </button>
+
+            {/* Bet Tier Selector Button */}
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                sound.playClick();
+                setShowBetModal(true);
+              }}
+              className="bg-[#0e1117] hover:bg-[#161a24] border border-slate-800 hover:border-slate-700/80 rounded-2xl p-2 sm:p-2.5 flex items-center justify-between text-left transition-all active:scale-[0.98] shadow-sm group"
+            >
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                  <span>Ставка</span>
+                  {currentBetConfig.multiplier > 1 && (
+                    <span className="bg-amber-500/20 text-amber-300 px-1 rounded text-[9px] font-black">
+                      ×{currentBetConfig.multiplier}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-black truncate text-slate-100" style={{ color: currentBetConfig.color }}>
+                  {currentBetConfig.title}
+                </div>
+              </div>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-200 shrink-0 ml-1" />
+            </button>
+          </div>
+
           {/* SIM Mechanical Reel Drums */}
           <div className="bg-[#0b0d11] border border-slate-800 rounded-2xl p-2.5 sm:p-4 my-2.5 shadow-inner">
             <div className="flex items-center justify-center gap-1 sm:gap-2 select-none">
-              {/* Prefix */}
-              <div className="bg-[#12161f] border border-slate-700/80 rounded-xl px-1.5 sm:px-3 py-1.5 sm:py-3 text-xs sm:text-lg font-bold font-mono text-emerald-400 shrink-0">
-                +7 ({displayOperator})
+              {/* Prefix with Flag & Code */}
+              <div className="bg-[#12161f] border border-slate-700/80 rounded-xl px-1.5 sm:px-3 py-1.5 sm:py-3 text-xs sm:text-base font-bold font-mono text-emerald-400 shrink-0 flex items-center gap-1">
+                <span>{currentCountry.flag}</span>
+                <span>{currentCountry.dialCode} ({displayOperator})</span>
               </div>
 
               {/* 7 Digits */}
@@ -868,7 +972,7 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-400 leading-snug">
-              Шансы на VIP и Epic снижены для высокой ценности на P2P-бирже! Прокачивайте Четырёхлистник удачи и Престиж оператора.
+              Шансы на VIP и Epic сбалансированы для ценности номеров! Прокачивайте Четырёхлистник удачи и Престиж оператора.
             </p>
 
             <button
@@ -877,6 +981,196 @@ export const GachaWheel: React.FC<GachaWheelProps> = ({
             >
               Понятно
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Country Selection Bottom Sheet Modal */}
+      {showCountryModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-[#12151d] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
+            {/* Drag handle */}
+            <div className="pt-3 pb-1 flex justify-center shrink-0">
+              <div className="w-10 h-1 bg-slate-700 rounded-full" />
+            </div>
+
+            {/* Modal Header */}
+            <div className="px-5 pt-1 pb-3 text-center border-b border-slate-800/80 shrink-0 relative">
+              <h3 className="font-black text-base text-slate-100 flex items-center justify-center gap-2">
+                <Globe className="w-4 h-4 text-emerald-400" />
+                <span>Выберите страну номеров</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto leading-tight">
+                Иностранные номера стоят дороже в крутке, но приносят в десятки раз больше дохода и дороже продаются!
+              </p>
+              <button
+                onClick={() => setShowCountryModal(false)}
+                className="absolute top-2 right-4 text-slate-400 hover:text-slate-100 text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {COUNTRIES.map(c => {
+                  const isSelected = selectedCountry === c.id;
+                  const spinCostForCountry = Math.round(discountedBaseSpinCost * c.costMultiplier);
+
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        triggerHaptic('selection');
+                        sound.playClick();
+                        setSelectedCountry(c.id);
+                      }}
+                      className={`p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between gap-2.5 transition-all active:scale-[0.98] text-left ${
+                        isSelected
+                          ? 'bg-slate-800/90 text-white font-black border-emerald-500 shadow-md ring-1 ring-emerald-500/30'
+                          : 'bg-[#181c26] text-slate-300 border-slate-800/80 hover:bg-[#202533]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-2xl leading-none shrink-0">{c.flag}</span>
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs truncate flex items-center gap-1.5">
+                            <span>{c.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono font-normal">
+                              ({c.dialCode})
+                            </span>
+                          </div>
+                          <div className="text-[10px] font-semibold truncate mt-0.5 text-emerald-400">
+                            {c.incomeMultiplier > 1
+                              ? `Доход: ×${c.incomeMultiplier} · Крутка: ×${c.costMultiplier}`
+                              : 'Базовый тариф (1.0x)'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        {isSelected ? (
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-sm ml-auto">
+                            <Check className="w-3.5 h-3.5 text-slate-950 stroke-[3]" />
+                          </div>
+                        ) : (
+                          <div className="text-[11px] font-mono font-bold text-slate-400">
+                            {spinCostForCountry.toLocaleString('ru-RU')} ₽
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Confirm / Close Button */}
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  sound.playClick();
+                  setShowCountryModal(false);
+                }}
+                className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition-all mt-2"
+              >
+                Выбрать {currentCountry.name} ({currentCountry.dialCode})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bet Tier Selection Bottom Sheet Modal (Screenshots 1) */}
+      {showBetModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-[#12151d] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col p-5 space-y-3.5 shadow-2xl animate-in slide-in-from-bottom duration-200">
+            {/* Drag handle */}
+            <div className="pb-1 flex justify-center shrink-0 -mt-2">
+              <div className="w-10 h-1 bg-slate-700 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="text-center space-y-1 relative shrink-0">
+              <h3 className="font-black text-base text-slate-100">
+                Ставка
+              </h3>
+              <p className="text-[11px] text-slate-400 px-2 leading-relaxed">
+                Дороже крутка — выше гарантированная редкость. Цена примерно равна средней стоимости такого номера, так что это не бесплатные деньги, а быстрый путь к редким номерам.
+              </p>
+              <button
+                onClick={() => setShowBetModal(false)}
+                className="absolute top-0 right-0 text-slate-400 hover:text-slate-100 text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Bet Tiers List (Exactly matching Screenshot 1) */}
+            <div className="space-y-2 overflow-y-auto pr-0.5">
+              {BET_TIERS.map(tier => {
+                const isSelected = selectedBetTier === tier.id;
+                const tierPrice = Math.round(discountedBaseSpinCost * tier.multiplier);
+
+                return (
+                  <div
+                    key={tier.id}
+                    onClick={() => {
+                      triggerHaptic('selection');
+                      sound.playClick();
+                      setSelectedBetTier(tier.id);
+                      setShowBetModal(false);
+                    }}
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99] ${
+                      isSelected
+                        ? 'bg-[#181d29] border-emerald-500/50 shadow-md ring-1 ring-emerald-500/20'
+                        : 'bg-[#13161f] border-slate-800/80 hover:bg-[#181c26]'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-black text-sm text-slate-100 flex items-center gap-1.5" style={{ color: tier.color }}>
+                        <span>{tier.title}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        {tier.sub}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="font-black text-sm font-mono-numbers text-slate-100">
+                        {tierPrice.toLocaleString('ru-RU')} ₽
+                      </span>
+
+                      {isSelected ? (
+                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
+                          <Check className="w-4 h-4 text-slate-950 stroke-[3]" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border border-slate-700 shrink-0" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer notes */}
+            <div className="text-[11px] text-slate-400 text-center space-y-1 pt-1 border-t border-slate-800/80">
+              <div className="text-slate-300 font-medium">
+                {currentCountry.name} ({currentCountry.dialCode}) · кошелёк{' '}
+                <span className="font-mono-numbers font-bold text-emerald-400">
+                  {balance.toLocaleString('ru-RU')} ₽
+                </span>
+              </div>
+              <div className="text-slate-400 leading-tight">
+                Бесплатные попытки тратятся только на обычную крутку.
+              </div>
+              {simCount > 1 && (
+                <div className="text-amber-300/90 leading-tight flex items-center justify-center gap-1 font-medium">
+                  <span>🎰 Включён ×{simCount}: цена выше — за {simCount} {simCount === 1 ? 'бросок' : 'бросков'} сразу, все с гарантией выбранной редкости.</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

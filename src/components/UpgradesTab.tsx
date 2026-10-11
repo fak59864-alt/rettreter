@@ -18,7 +18,6 @@ import {
   Clover,
   Percent,
   Layers,
-  Gift,
   Check,
   Crown,
   BookmarkPlus,
@@ -358,42 +357,6 @@ export const UpgradesTab: React.FC<UpgradesTabProps> = ({
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Daily Free Grant Banner */}
-      {subTab !== 'prestige' && (
-        <div className="bg-[#141822] border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <Gift className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
-                <span>Грант связиста</span>
-                <span className="text-[11px] text-emerald-400 font-mono font-bold">+1 000 ₽</span>
-              </div>
-              <div className="text-[11px] text-slate-400">Пополнение капитала каждые 4 часа</div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              if (bonusCooldown === 0) {
-                triggerHaptic('success');
-                sound.playUpgrade();
-                onClaimBonus(1000);
-              }
-            }}
-            disabled={bonusCooldown > 0}
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs whitespace-nowrap active:scale-95 transition-all ${
-              bonusCooldown === 0
-                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed font-mono-numbers text-[11px]'
-            }`}
-          >
-            {bonusCooldown === 0 ? 'Забрать' : formatTimer(bonusCooldown)}
-          </button>
         </div>
       )}
 

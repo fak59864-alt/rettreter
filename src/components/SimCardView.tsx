@@ -46,13 +46,14 @@ export const SimCardView: React.FC<SimCardViewProps> = ({
       {/* Top Bar of SIM Card */}
       <div className="flex items-center justify-between gap-2 mb-3">
         {/* Operator & Network */}
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: config.color }} />
+        <div className="flex items-center gap-1.5">
+          {card.countryFlag && <span className="text-sm select-none">{card.countryFlag}</span>}
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
           <span className="font-bold text-xs sm:text-sm tracking-wide uppercase text-slate-200">
             {card.operatorName}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/80 font-mono text-slate-400">
-            5G+
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800/80 font-mono text-slate-400">
+            5G
           </span>
         </div>
 
@@ -127,7 +128,12 @@ export const SimCardView: React.FC<SimCardViewProps> = ({
           {/* Steady income per second */}
           <span className="text-[11px] font-bold text-emerald-300 font-mono-numbers bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1">
             <Zap className="w-2.5 h-2.5 text-emerald-400 fill-emerald-400" />
-            <span>+{BASE_NUMBER_INCOME[card.rarity] || 3} ₽/с</span>
+            <span>
+              +{(() => {
+                const inc = (BASE_NUMBER_INCOME[card.rarity] || 0.2) * (card.countryIncomeMultiplier || 1);
+                return inc >= 10 ? Math.round(inc) : inc.toFixed(1);
+              })()} ₽/с
+            </span>
           </span>
 
           <span className="text-xs font-mono font-bold text-slate-300">
